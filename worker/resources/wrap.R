@@ -4,7 +4,7 @@ exec <- function(method, params) {
     params <- fromJSON(params)
     result <- do.call(method, list(params))
   } else {
-    stop("Provided JSON was invalid")
+    stop(paste("Provided JSON was invalid:", params))
   }
   toJSON(result)
 }
