@@ -20,7 +20,7 @@
         :broker-socket "tcp://localhost:7740"}
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]
-                                  [org.jeromq/jeromq "0.3.0-SNAPSHOT"]]}
+                                  [org.zeromq/jeromq "0.3.4"]]}
              :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
                           :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib" ]}}
   :main patavi.worker.main)

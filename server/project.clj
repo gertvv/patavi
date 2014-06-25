@@ -6,7 +6,7 @@
   :url "http://patavi.com"
   :repositories {"sonatype-nexus-snapshots" "https://oss.sonatype.org/content/repositories/snapshots"
                  "sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/" }
-  :plugins [[lein-environ "0.4.0"] ]
+  :plugins [[lein-environ "0.4.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.5"]
                  [patavi.common "0.2.4"]
@@ -21,10 +21,9 @@
         :ws-origin-re "https?://.*"
         :ws-base-uri "http://api.patavi.com/"
         :task-timeout 36000}
-  :profiles {:uberjar {:aot :all}
-             :dev {:dependencies [[criterium "0.4.2"]
+  :profiles {:dev {:dependencies [[criterium "0.4.2"]
                                   [org.clojure/tools.namespace "0.2.4"]
-                                  [org.jeromq/jeromq "0.3.0-SNAPSHOT"]]}
+                                  [org.zeromq/jeromq "0.3.4"]]}
              :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
                           :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib"]}}
-  :main patavi.server.server)
+  :main ^:skip-aot patavi.server.server)
