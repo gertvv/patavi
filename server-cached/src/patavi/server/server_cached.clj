@@ -23,7 +23,7 @@
 
 (defn cache-result [id result]
   (if (not (:error result))
-    (jdbc/update! db-url :patavi_tasks {:result (json/generate-string result)} ["id = ?" id]))
+    (jdbc/update! db-url :pataviTask {:result (json/generate-string result)} ["id = ?" id]))
   result)
 
 (defn handle-service-with-cache [request data]
@@ -38,8 +38,10 @@
                               :on-subscribe {handlers/service-status-uri true}
                               :on-publish {handlers/service-status-uri true}}))))
 
+(defn println* [x] (println x) x)
+
 (defn handle-with-cache [id req]
-  (let [call (jdbc/query db-url ["select id, method, problem, result from patavi_tasks where id = ?" (Integer. id)])]
+  (let [call (jdbc/query db-url ["select id, method, problem, result from pataviTask where id = ?" (Integer. id)])]
     (if (empty? call)
         { :status 404 :body "No such task" }
         (handle-service-with-cache req (first call)))))
