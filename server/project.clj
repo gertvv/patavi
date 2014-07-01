@@ -20,7 +20,8 @@
         :broker-backend-socket "tcp://*:7740"
         :ws-origin-re "https?://.*"
         :ws-base-uri "http://api.patavi.com/"
-        :task-timeout 36000}
+        :task-silence-timeout 1000
+        :task-global-timeout 10000}
   :profiles {:dev {:dependencies [[criterium "0.4.2"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.zeromq/jeromq "0.3.4"]]}

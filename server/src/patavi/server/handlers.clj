@@ -2,7 +2,7 @@
   (:use patavi.server.util)
   (:require [clojure.tools.logging :as log]
             [clojure.string :only [replace split] :as s]
-            [clojure.core.async :as async :refer [go <! >! chan]]
+            [clojure.core.async :as async :refer [go-loop <! >! chan]]
             [clj-wamp.server :as wamp]
             [ring.util.response :as resp]
             [org.httpkit.server :as http-kit]
@@ -14,16 +14,36 @@
 (def service-rpc-uri (str base "rpc#"))
 (def service-status-uri (str base "status#"))
 
+(defn- current-time []
+  (System/currentTimeMillis))
+
+(defn deref-dynamic 
+  [ref last-update-time silence-timeout global-timeout timeout-val]
+  (let [start-time (current-time)
+        deadline (+ start-time global-timeout)]
+    (loop [val (deref ref silence-timeout timeout-val)]
+      (if (or (not (= val timeout-val)) 
+              (> (current-time) deadline) 
+              (> (current-time) (+ @last-update-time silence-timeout)))
+        val
+        (recur (deref ref silence-timeout timeout-val))))))
+
 (defn dispatch-rpc
   [service data]
   (let [listeners [wamp/*call-sess-id*]
-        {:keys [updates close results]} (service/publish service data)]
+        {:keys [updates close results]} (service/publish service data)
+        last-update-time (atom (current-time))]
     (try
-      (go (loop [update (<! updates)]
-            (when ((comp not nil?) update)
-              (wamp/emit-event! service-status-uri (:msg update) listeners)
-              (recur (<! updates)))))
-      (deref results (env :task-timeout) {:error {:uri service-rpc-uri :message "this took way too long"}})
+      (go-loop [update (<! updates)]
+        (when ((comp not nil?) update)
+          (swap! last-update-time (fn [x] (current-time)))
+          (wamp/emit-event! service-status-uri (:msg update) listeners)
+          (recur (<! updates))))
+      (deref-dynamic results
+                     last-update-time
+                     (env :task-silence-timeout)
+                     (env :task-global-timeout)
+                     {:error {:uri service-rpc-uri :message "this took way too long"}})
       (catch Exception e
         (do
           (log/error e)
