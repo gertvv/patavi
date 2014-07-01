@@ -14,8 +14,8 @@
         :broker-backend-socket "tcp://*:7740"
         :ws-origin-re "https?://.*"
         :ws-base-uri "http://api.patavi.com/"
-        :task-silence-timeout 1000
-        :task-global-timeout 10000
+        :task-silence-timeout 20000
+        :task-global-timeout 300000
         :cache-db-url "postgresql://localhost/addiscore?user=addiscore&password=develop"}
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[criterium "0.4.2"]
