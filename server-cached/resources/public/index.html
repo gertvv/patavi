@@ -18,12 +18,19 @@
         </p>
       </div>
     </div>
+    <div class="row">
+      <hr>
+      <div class="columns"><h2>Direct RPC</h2></div>
+    </div>
     <div ng-controller="TaskCtrl" class="row">
       <div class="columns large-4">
 
-        <label>Task ID</label>
-        <input type="text" ng-model="taskId">
-        <button class="small secondary button" ng-click="submit(taskId)">Submit new task</button>
+        <label>Method</label>
+        <input type="text" ng-model="method">
+        <label>Input (JSON)</label>
+        <textarea ng-model="input">
+        </textarea>
+        <button class="small secondary button" ng-click="submit(method, input)">Submit new task</button>
       </div>
       <div class="columns large-offset-1 large-7">
         <label>progress</label>
@@ -31,7 +38,39 @@
           <span class="meter" ng-style="{width: (status.progress || 0) + '%'}"></span>
         </div>
       </div>
+
+      <div class="columns" ng-show="status">
+        <h2 class="subheader">Status</h2>
+        <div class="panel"><pre>{{status | json}}</pre></div>
+      </div>
+      <div class="columns" ng-show="results">
+        <h2 class="subheader">Results</h2>
+        <div class="panel"><pre>{{results | json}}</pre></div>
+      </div>
+      <div class="columns" ng-show="error">
+        <h2 class="subheader">Error</h2>
+        <div class="panel"><pre>{{error | json}}</pre></div>
+      </div>
+    </div>
+
+    <div class="row">
       <hr>
+      <div class="columns"><h2>Staged RPC</h2></div>
+    </div>
+    <div ng-controller="TaskCtrl" class="row">
+      <div class="columns large-4">
+
+        <label>Task ID</label>
+        <input type="text" ng-model="taskId">
+        <button class="small secondary button" ng-click="submitStagedTask(taskId)">Submit new task</button>
+      </div>
+      <div class="columns large-offset-1 large-7">
+        <label>progress</label>
+        <div class="secondary radius progress large-6">
+          <span class="meter" ng-style="{width: (status.progress || 0) + '%'}"></span>
+        </div>
+      </div>
+
       <div class="columns" ng-show="status">
         <h2 class="subheader">Status</h2>
         <div class="panel"><pre>{{status | json}}</pre></div>

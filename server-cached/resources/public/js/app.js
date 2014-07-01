@@ -4,9 +4,10 @@ angular.module('example', []);
 
 function TaskCtrl($scope) {
   $scope.taskId = 0;
+  $scope.method = "echo";
+  $scope.input = JSON.stringify({ "Hello": "World!" });
 
-  $scope.submit = function(taskId) {
-    var task = patavi.submit(taskId);
+  function handlePataviTask(task) {
     $scope.error = null;
     $scope.status = null;
     $scope.results = null;
@@ -23,6 +24,14 @@ function TaskCtrl($scope) {
     var successHandler = handlerFactory("results");
 
     task.results.then(successHandler, errorHandler, progressHandler);
+  };
+
+  $scope.submitStagedTask = function(taskId) {
+    handlePataviTask(patavi.submitStagedTask(taskId));
+  };
+
+  $scope.submit = function(method, payload) {
+    handlePataviTask(patavi.submit(method, JSON.parse(payload)));
   };
 }
 TaskCtrl.$inject = ['$scope'];

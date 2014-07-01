@@ -9,20 +9,21 @@
   var WS_URI = typeof config['WS_URI'] !== 'undefined' ? config['WS_URI'] : "ws://localhost:3000/ws";
   var BASE_URI = typeof config['BASE_URI'] !== 'undefined' ? config['BASE_URI'] : "http://api.patavi.com/";
 
-  var Task = function(taskId) {
+  var Task = function(url) {
     var resultsPromise = when.defer();
     var self = this;
     this.results = resultsPromise.promise;
 
-    var session = ab.connect(WS_URI + "/" + taskId, function(session) {
-      console.info("Connected to " + WS_URI, session.sessionid());
+    var args = [BASE_URI + "rpc#"].concat(Array.prototype.slice.call(arguments, 1));
+    var session = ab.connect(url, function(session) {
+      console.info("Connected to " + url, session.sessionid());
       // Subscribe to updates
       session.subscribe(BASE_URI + "status#", function(topic, event) {
         resultsPromise.notify(event);
       });
 
       // Send-off RPC
-      self.results = session.call(BASE_URI + "rpc#").then(
+      self.results = session.call.apply(session, args).then(
         function(result) {
           resultsPromise.resolve(result);
           session.close();
@@ -41,8 +42,11 @@
   };
 
   var patavi = {
-    submit: function (taskId) {
-      return new Task(taskId);
+    submit: function(method, payload) {
+      return new Task(WS_URI, method, payload);
+    },
+    submitStagedTask: function (taskId) {
+      return new Task(WS_URI + "/staged/" + taskId);
     }
   };
 

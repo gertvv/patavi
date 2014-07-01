@@ -47,8 +47,10 @@
 (defn assemble-routes []
   (->
    (routes
-    (GET "/ws/:id" [id :as req] (handle-with-cache id req))
-    (OPTIONS "/ws/:id" [] (http/options #{:options :get}))
+    (GET "/ws" [:as req] (handlers/handle-service req))
+    (OPTIONS "/ws" [] (http/options #{:options :get}))
+    (GET "/ws/staged/:id" [id :as req] (handle-with-cache id req))
+    (OPTIONS "/ws/staged/:id" [] (http/options #{:options :get}))
     (GET "/" [] (response/resource-response "index.html" {:root "public"}))
     (route/resources "/")
     (route/not-found "Page not found"))))
