@@ -15,11 +15,11 @@
 (def service-status-uri (str base "status#"))
 (def silence-timeout 
   (if (env :patavi-task-silence-timeout) 
-    (env :patavi-task-silence-timeout)
+    (Integer. (env :patavi-task-silence-timeout))
     (throw (RuntimeException. "PATAVI_TASK_SILENCE_TIMEOUT not set"))))
 (def global-timeout 
   (if (env :patavi-task-global-timeout) 
-    (env :patavi-task-global-timeout)
+    (Integer. (env :patavi-task-global-timeout))
     (throw (RuntimeException. "PATAVI_TASK_GLOBAL_TIMEOUT not set"))))
 
 (defn- current-time []
