@@ -13,6 +13,14 @@
 (def base (env :ws-base-uri))
 (def service-rpc-uri (str base "rpc#"))
 (def service-status-uri (str base "status#"))
+(def silence-timeout 
+  (if (env :patavi-task-silence-timeout) 
+    (env :patavi-task-silence-timeout)
+    (throw (RuntimeException. "PATAVI_TASK_SILENCE_TIMEOUT not set"))))
+(def global-timeout 
+  (if (env :patavi-task-global-timeout) 
+    (env :patavi-task-global-timeout)
+    (throw (RuntimeException. "PATAVI_TASK_GLOBAL_TIMEOUT not set"))))
 
 (defn- current-time []
   (System/currentTimeMillis))
@@ -41,8 +49,8 @@
           (recur (<! updates))))
       (deref-dynamic results
                      last-update-time
-                     (env :patavi-task-silence-timeout)
-                     (env :patavi-task-global-timeout)
+                     silence-timeout
+                     global-timeout
                      {:error {:uri service-rpc-uri :message "this took way too long"}})
       (catch Exception e
         (do

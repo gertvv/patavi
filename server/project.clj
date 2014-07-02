@@ -24,7 +24,7 @@
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.zeromq/jeromq "0.3.4"]]
                    :env {:patavi-task-silence-timeout 20000
-                         :patavi-task-global-timeout 300000}}}
+                         :patavi-task-global-timeout 300000}}
              :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
                           :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib"]}}
   :main ^:skip-aot patavi.server.server)
