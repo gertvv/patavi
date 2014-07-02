@@ -41,8 +41,8 @@
           (recur (<! updates))))
       (deref-dynamic results
                      last-update-time
-                     (env :task-silence-timeout)
-                     (env :task-global-timeout)
+                     (env :patavi-task-silence-timeout)
+                     (env :patavi-task-global-timeout)
                      {:error {:uri service-rpc-uri :message "this took way too long"}})
       (catch Exception e
         (do
