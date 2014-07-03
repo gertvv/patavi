@@ -88,6 +88,12 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.1.5/angular.min.js"></script>
     <script src="//autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
 
+    <script type="text/javascript">
+      window.patavi = {
+        "WS_URI": (window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws"
+      };
+    </script>
+
     <script src="js/patavi.js"></script>
     <script src="js/app.js"></script>
     
