@@ -13,14 +13,14 @@
         :broker-updates-socket "ipc://updates.ipc"
         :broker-backend-socket "tcp://*:7740"
         :ws-origin-re "https?://.*"
-        :ws-base-uri "http://api.patavi.com/"
-        :task-silence-timeout 1000
-        :task-global-timeout 10000
-        :cache-db-url "postgresql://localhost/addiscore?user=addiscore&password=develop"}
+        :ws-base-uri "http://api.patavi.com/"}
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[criterium "0.4.2"]
                                   [org.clojure/tools.namespace "0.2.4"]
-                                  [org.zeromq/jeromq "0.3.4"]]}
+                                  [org.zeromq/jeromq "0.3.4"]]
+                   :env {:patavi-cache-db-url "postgresql://localhost/addiscore?user=addiscore&password=develop"
+                         :patavi-task-silence-timeout 20000
+                         :patavi-task-global-timeout 300000}}
              :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
                           :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib"]}}
   :main patavi.server.server-cached)

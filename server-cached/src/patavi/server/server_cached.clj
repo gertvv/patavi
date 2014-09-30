@@ -19,7 +19,11 @@
 
 (declare in-dev?)
 
-(def db-url {:connection-uri (str "jdbc:" (env :cache-db-url))})
+(def cache-db-url
+  (if (env :patavi-cache-db-url) 
+    (env :patavi-cache-db-url)
+    (throw (RuntimeException. "PATAVI_CACHE_DB_URL not set"))))
+(def db-url {:connection-uri (str "jdbc:" cache-db-url)})
 
 (defn cache-result [id result]
   (if (not (:error result))

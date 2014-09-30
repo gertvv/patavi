@@ -25,7 +25,11 @@ options](http://cran.r-project.org/doc/FAQ/R-FAQ.html#R-Web-Interfaces).
 Start the server with `lein run` in the server folder then start one or more workers
 with `lein run`. You can provide the method name and file in the options (run
 `lein --help` for details).
-
+In a production setting the following environment variables should be set to configure Patavi's behaviour:
+  - ```PATAVI_SILENCE_TIMEOUT``` - How long an R process may be silent (ie. transmit no updates to Patavi) before it is assumed to have timed out.
+  - ```PATAVI_GLOBAL_TIMEOUT``` - How long an R process may take overall.
+  - ```PATAVI_CACHE_DB_URL``` - (only in case of ```server-cached```) The URL of the database where patavi results are cached. Should include username and password.
+  
 The R script takes exactly one argument `params` which is the de-serialized JSON
 (through [RJSONIO](http://cran.r-project.org/web/packages/RJSONIO/index.html)). The following script emulates a long running process:
 
