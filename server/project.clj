@@ -25,6 +25,6 @@
              :dev {:dependencies [[criterium "0.4.2"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.jeromq/jeromq "0.3.0-SNAPSHOT"]]}
-             :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
+             :production {:dependencies [[org.zeromq/jzmq "3.1.0"]]
                           :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib"]}}
   :main patavi.server.server)
