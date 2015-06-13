@@ -1,4 +1,4 @@
-(defproject patavi.server "0.2.4-1"
+(defproject patavi.server "0.2.5-1"
   :description "Patavi is a distributed system for exposing R as WAMP"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"

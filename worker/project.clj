@@ -1,4 +1,4 @@
-(defproject patavi.worker "0.2.4-1"
+(defproject patavi.worker "0.2.5-1"
   :url "http://patavi.com"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"
