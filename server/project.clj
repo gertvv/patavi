@@ -7,7 +7,7 @@
   :repositories {"sonatype-nexus-snapshots" "https://oss.sonatype.org/content/repositories/snapshots"
                  "sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/" }
   :plugins [[lein-environ "0.4.0"] ]
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [compojure "1.1.5"]
                  [patavi.common "0.2.4"]
                  [ring/ring-devel "1.2.1"]

@@ -8,7 +8,7 @@
                  "sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"
                  "drugis" "http://drugis.org/mvn"}
   :plugins [[lein-environ "0.4.0"]]
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [patavi.common "0.2.4"]
                  [me.raynes/fs "1.4.5"]
                  [org.rosuda/REngine "1.7.1-20130821.152906-1"]]
