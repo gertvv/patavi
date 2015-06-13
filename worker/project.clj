@@ -8,7 +8,7 @@
                  "sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"
                  "drugis" "http://drugis.org/mvn"}
   :plugins [[lein-environ "0.4.0"]]
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [patavi.common "0.2.4"]
                  [me.raynes/fs "1.4.5"]
                  [org.rosuda/REngine "1.7.1-20130821.152906-1"]]
@@ -21,6 +21,6 @@
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]
                                   [org.zeromq/jeromq "0.3.4"]]}
-             :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
+             :production {:dependencies [[org.zeromq/jzmq "3.1.0"]]
                           :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib" ]}}
   :main patavi.worker.main)

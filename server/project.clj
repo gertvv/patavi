@@ -7,7 +7,7 @@
   :repositories {"sonatype-nexus-snapshots" "https://oss.sonatype.org/content/repositories/snapshots"
                  "sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/" }
   :plugins [[lein-environ "0.4.0"]]
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [compojure "1.1.5"]
                  [patavi.common "0.2.4"]
                  [ring/ring-devel "1.2.1"]
@@ -25,6 +25,6 @@
                                   [org.zeromq/jeromq "0.3.4"]]
                    :env {:patavi-task-silence-timeout 20000
                          :patavi-task-global-timeout 300000}}
-             :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
+             :production {:dependencies [[org.zeromq/jzmq "3.1.0"]]
                           :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib"]}}
   :main ^:skip-aot patavi.server.server)

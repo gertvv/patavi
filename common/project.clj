@@ -6,7 +6,7 @@
             :distribution :repo}
   :repositories {"sonatype-nexus-snapshots" "https://oss.sonatype.org/content/repositories/snapshots"
                  "sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/" }
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]
                  [org.clojure/tools.logging "0.2.6"]
                  [org.clojure/tools.cli "0.2.4"]
@@ -17,7 +17,7 @@
                                               javax.jms/jms
                                               com.sun.jdmk/jmxtools
                                               com.sun.jmx/jmxri]]
-                 [org.zeromq/cljzmq "0.1.3" :exclusions [org.zeromq/jzmq]]
+                 [org.zeromq/cljzmq "0.1.4" :exclusions [org.zeromq/jzmq]]
                  [com.google.guava/guava "15.0"]
                  [clj-time "0.6.0"]
                  [crypto-random "1.1.0"]])
