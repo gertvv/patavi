@@ -8,7 +8,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/java.jdbc "0.3.3"]
                  [postgresql "9.1-901-1.jdbc4"]
-                 [patavi.server "0.2.4-1"]]
+                 [patavi.server "0.2.5-1"]]
   :env {:broker-frontend-socket "ipc://frontend.ipc"
         :broker-updates-socket "ipc://updates.ipc"
         :broker-backend-socket "tcp://*:7740"
