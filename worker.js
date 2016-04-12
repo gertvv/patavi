@@ -13,7 +13,7 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
     process.exit(1);
   }
   conn.createChannel(function(err, ch) {
-    var q = 'rpc_queue';
+    var q = 'slow';
     var ex = 'rpc_status';
 
     ch.assertQueue(q, {durable: false}); // should durable be true?
@@ -34,17 +34,17 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
       //  - Task failed
       //  - Progress (optional)
 
-      ch.publish(ex, taskId + ".status", util.asBuffer({ taskId: taskId, eventType: "accepted", workerId: workerId }));
+      ch.publish(ex, taskId + ".status", util.asBuffer({ service: q, taskId: taskId, eventType: "accepted", workerId: workerId }));
       async.timesSeries(secs, function(i, next) {
         setTimeout(function() {
           console.log(" [ ] " + i);
-          ch.publish(ex, taskId + ".status", util.asBuffer({ taskId: taskId, eventType: "progress", eventData: (i+1)/secs, workerId: workerId }));
+          ch.publish(ex, taskId + ".status", util.asBuffer({ service: q, taskId: taskId, eventType: "progress", eventData: (i+1)/secs, workerId: workerId }));
           next(null, i);
         }, 1000);
       }, function(err, data) {
         console.log(" [x] Done");
 
-        ch.publish(ex, taskId + ".status", util.asBuffer({ taskId: taskId, eventType: "completed", workerId: workerId }));
+        ch.publish(ex, taskId + ".status", util.asBuffer({ service: q, taskId: taskId, eventType: "completed", workerId: workerId }));
         // Return results
         // Should contain all products of the call
         ch.sendToQueue(msg.properties.replyTo,
