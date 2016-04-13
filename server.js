@@ -46,7 +46,7 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
         });
       });
       results[taskId].then(function(result) {
-        ws.send(JSON.stringify({ taskId: taskId, eventType: "done", eventData: result }));
+        ws.send(JSON.stringify({ taskId: taskId, eventType: "done" }));
         ws.close();
       }, function(failure) {
         ws.send(JSON.stringify({ taskId: taskId, eventType: "failed", eventData: failure }));
@@ -103,7 +103,10 @@ app.get('/task/:taskId', function(req, res) {
 app.get('/task/:taskId/results', function(req, res) {
   var taskId = req.params.taskId;
   if (results[taskId]) {
-    res.send(results[taskId]);
+    results[taskId].then(function(result) {
+      res.header("Content-Type", "application/json");
+      res.send(result);
+    });
   } else {
     res.status(404);
     res.end();

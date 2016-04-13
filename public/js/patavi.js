@@ -11,6 +11,19 @@
 
   var Task = function(method, payload) {
     var resultsPromise = when.defer();
+
+    function getResults(url) {
+      var http = new XMLHttpRequest();
+      http.open("GET", url, true);
+      http.responseType = "json";
+      http.send();
+      http.onreadystatechange = function() {
+        if (http.readyState === 4 && http.status === 200) {
+          resultsPromise.resolve(http.response);
+        }
+      }
+    }
+
     var self = this;
     this.results = resultsPromise.promise;
 
@@ -29,8 +42,8 @@
           var data = JSON.parse(event.data);
           if (data.eventType === "done") {
             console.log("done");
-            resultsPromise.resolve(data.eventData);
             socket.close();
+            getResults(urlBase + http.getResponseHeader("Location") + "/results");
           } else if (data.evenType === "failed") {
             console.log("error", data.eventData);
             resultsPromise.reject(data.eventData);
