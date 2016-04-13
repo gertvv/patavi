@@ -1,6 +1,7 @@
 (ns patavi.worker.main
   (:gen-class)
   (:require [patavi.worker.consumer :as consumer]
+            [patavi.worker.amqp :as amqp]
             [patavi.worker.pirate.core :as pirate]
             [clojure.tools.cli :refer [cli]]
             [clojure.string :refer [split trim capitalize]]
@@ -11,6 +12,7 @@
   (let [[options args banner]
         (cli args
              ["-h" "--help" "Show help" :default false :flag true]
+             ["-a" "--amqp" "Use AMQP instead of ZMQ" :default false :flag true]
              ["-r" "--rserve" "Start RServe from application" :default false :flag true]
              ["-n" "--nworkers" "Amount of worker threads to start"
               :default (.availableProcessors (Runtime/getRuntime))
@@ -27,5 +29,7 @@
     (pirate/initialize file packages rserve)
     (dotimes [n nworkers]
       (log/info "[main] started worker for" method)
-      (consumer/start method (partial pirate/execute method)))
+      (if (:amqp options)
+        (amqp/start method (partial pirate/execute method))
+        (consumer/start method (partial pirate/execute method))))
     (while true (Thread/sleep 100))))
