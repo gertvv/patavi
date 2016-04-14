@@ -27,8 +27,8 @@
     var self = this;
     this.results = resultsPromise.promise;
 
-    var urlBase = "http://localhost:3000";
-    var wsBase = "ws://localhost:3000";
+    var urlBase = "https://localhost:3000";
+    var wsBase = "wss://localhost:3000";
 
     var http = new XMLHttpRequest();
     http.open("POST", urlBase + "/task?method=" + method, true);

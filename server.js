@@ -1,4 +1,6 @@
 var express = require('express');
+var fs = require('fs');
+var https = require('https');
 var bodyParser = require('body-parser');
 var amqp = require('amqplib/callback_api');
 var Promise = require('promise');
@@ -6,12 +8,27 @@ var Promise = require('promise');
 var FlakeId = require('flake-idgen');
 var idGen = new FlakeId(); // FIXME: set unique generator ID
 
-var patavi_base = 'http://api.patavi.com/';
+var httpsOptions = {
+  key: fs.readFileSync('ssl/server-key.pem'),
+  cert: fs.readFileSync('ssl/server-crt.pem'),
+  ca: fs.readFileSync('ssl/ca-crt.pem'),
+  requestCert: true,
+  rejectUnauthorized: false
+}
 
 var app = express();
+var server = https.createServer(httpsOptions, app);
+
 app.use(bodyParser.json());
 app.use(express.static('public'));
-var ws = require('express-ws')(app);
+var ws = require('express-ws')(app, server);
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 
 var results = {};
 
@@ -55,6 +72,11 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
     });
 
     app.post('/task', function(req, res) {
+      if (!req.client.authorized) { // client authorization required to submit jobs
+        res.status(401);
+        res.send("Not authorized!");
+        return;
+      }
       var taskId = idGen.next().toString('hex');
       results[taskId] = new Promise(function(resolve, reject) {
         console.log(' * Sending RPC request', taskId, req.query.method);
@@ -113,6 +135,6 @@ app.get('/task/:taskId/results', function(req, res) {
   }
 });
 
-app.listen(3000, function() {
-  console.log("Listening on http://localhost:3000/");
+server.listen(3000, function() {
+  console.log("Listening on https://localhost:3000/");
 });
