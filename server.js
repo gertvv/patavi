@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 var amqp = require('amqplib/callback_api');
 var util = require('./util');
 var pataviStore = require('./pataviStore')
+var async = require('async');
 
 var FlakeId = require('flake-idgen');
 var idGen = new FlakeId(); // FIXME: set unique generator ID
@@ -72,95 +73,155 @@ var taskDescription = function(taskId, status) {
   }
 }
 
+var updatesWebSocket = function(app, ch, statusExchange) {
+  function getService(taskId, callback) {
+    pataviStore.getMethod(taskId, function(err, service) {
+      callback(err, service, taskId);
+    });
+  }
+
+  function makeEventQueue(service, taskId, callback) {
+    ch.assertQueue('', { exclusive: true, autoDelete: true }, function(err, statusQ) {
+      if (!err) {
+        ch.bindQueue(statusQ.queue, statusExchange, taskId + ".*");
+      }
+      callback(err, service, statusQ);
+    });
+  }
+
+  return function(ws, req) {
+    function receiveMessage(msg) {
+      var str = msg.content.toString();
+      var json = JSON.parse(str);
+      ws.send(str);
+      if (str.eventType === "done" || str.eventType === "failed") {
+        ws.close();
+      }
+    }
+
+    function consumerStarted(err, ok) {
+      ws.on('close', function() { // stop listening when the client leaves
+        if (ok && ok.consumerTag) {
+          ch.cancel(ok.consumerTag);
+        }
+      });
+      pataviStore.getStatus(taskId, function(err, status) {
+        if (err) {
+          ws.close();
+        } else if (status == "failed" || status == "done") {
+          ws.send(JSON.stringify(resultMessage(service, taskId, status)));
+          ws.close();
+        }
+      });
+    }
+
+    var taskId = req.params.taskId;
+    async.waterfall([
+       async.apply(getService, taskId),
+       makeEventQueue
+    ], function(err, service, statusQ) {
+      if (err) {
+        console.log("Error creating websocket", err);
+        return ws.close();
+      }
+
+      ch.consume(statusQ.queue, receiveMessage, { noAck: true }, consumerStarted);
+    });
+  };
+}
+
+var postTask = function(app, ch, statusExchange) {
+  return function(req, res, next) {
+    var service = req.query.method;
+    var taskId = idGen.next().toString('hex');
+
+    var cert = req.connection.getPeerCertificate();
+
+    function persistTask(callback) {
+      pataviStore.persistTask(taskId, cert.subject.CN, cert.fingerprint, service, req.body, function(err) {
+        callback(err);
+      });
+    }
+
+    function assertServiceQueue(callback) {
+      ch.assertQueue(service, {exclusive: false, durable: true}, function(err, queue) {
+        callback(err);
+      });
+    }
+
+    function assertReplyQueue(callback) {
+      ch.assertQueue('', {exclusive: true, autoDelete: true}, callback);
+    }
+
+    function registerReplyConsumer(replyTo, callback) {
+      ch.consume(replyTo.queue, function(msg) {
+        if (msg.properties.correlationId == taskId) {
+          var result = JSON.parse(msg.content.toString());
+          console.log(' * RPC request', taskId, 'terminated');
+          pataviStore.persistResult(taskId, result.status === "failed" ? "failed" : "done", result, function(err) {
+            if (err) {
+              // TODO: handle DB errors
+              return console.log(err);
+            }
+
+            var status = result.status == "failed" ? "failed" : "done";
+            ch.publish(statusExchange, taskId + ".status", util.asBuffer(resultMessage(service, taskId, status)));
+            ch.cancel(msg.fields.consumerTag);
+          });
+        }
+      }, { noAck: true }, function(err, ok) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, replyTo);
+        }
+      });
+    }
+
+    function queueTask(replyTo, callback) {
+      ch.sendToQueue(req.query.method,
+          new Buffer(JSON.stringify(req.body)),
+          { correlationId: taskId, replyTo: replyTo.queue });
+
+      res.status(201);
+      res.location('https:' + pataviSelf + '/task/' + taskId);
+      res.send(taskDescription(taskId, "unknown"));
+    }
+
+    async.waterfall([
+      persistTask,
+      assertServiceQueue,
+      assertReplyQueue,
+      registerReplyConsumer,
+      queueTask
+    ], function(err) {
+      next(err);
+    });
+  }
+}
+
+// API routes that depend on AMQP connection
 amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
   if (err) {
     console.error(err);
     process.exit(1);
   }
   conn.createChannel(function(err, ch) {
-    var ex = 'rpc_status';
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
 
-    ch.assertExchange(ex, 'topic', { durable: false });
+    var statusExchange = 'rpc_status';
+    ch.assertExchange(statusExchange, 'topic', { durable: false });
 
-    app.ws('/task/:taskId/updates', function(ws, req) {
-      var taskId = req.params.taskId;
-      // check that the task exists
-      pataviStore.getMethod(taskId, function(err, service) {
-        if (err) {
-          return ws.close();
-        }
+    app.ws('/task/:taskId/updates', updatesWebSocket(app, ch, statusExchange));
 
-        // listen for events on the task
-        ch.assertQueue('', {exclusive: true}, function(err, statusQ) {
-          ch.bindQueue(statusQ.queue, ex, taskId + ".*");
-          tag = ch.consume(statusQ.queue, function(msg) {
-            var str = msg.content.toString();
-            var json = JSON.parse(str);
-            ws.send(str);
-            if (str.eventType === "done" || str.eventType === "failed") {
-              ws.close();
-            }
-          }, { noAck: true }, function(err, ok) {
-            ws.on('close', function() { // stop listening when the client leaves
-              if (ok && ok.consumerTag) {
-                ch.cancel(ok.consumerTag);
-              }
-            });
-            pataviStore.getStatus(taskId, function(err, status) {
-              if (err) {
-                ws.close();
-              } else if (status == "failed" || status == "done") {
-                ws.send(JSON.stringify(resultMessage(service, taskId, status)));
-                ws.close();
-              }
-            });
-          });
-        });
-      });
-    });
-
-    app.post('/task', authRequired, function(req, res) {
-      var service = req.query.method;
-      var taskId = idGen.next().toString('hex');
-
-      var cert = req.connection.getPeerCertificate();
-      pataviStore.persistTask(taskId, cert.subject.CN, cert.fingerprint, service, req.body, function(err) {
-        if (err) {
-          // TODO: handle DB errors
-          console.log(err);
-        }
-        console.log(' * Sending RPC request', taskId, service);
-
-        ch.assertQueue('', {exclusive: true, autoDelete: true}, function(err, replyTo) {
-          ch.consume(replyTo.queue, function(msg) {
-            if (msg.properties.correlationId == taskId) {
-              var result = JSON.parse(msg.content.toString());
-              console.log(' * RPC request', taskId, 'terminated');
-              pataviStore.persistResult(taskId, result.status === "failed" ? "failed" : "done", result, function(err) {
-                if (err) {
-                  // TODO: handle DB errors
-                  console.log(err);
-                }
-
-                var status = result.status == "failed" ? "failed" : "done";
-                ch.publish(ex, taskId + ".status", util.asBuffer(resultMessage(service, taskId, status)));
-                ch.cancel(msg.fields.consumerTag);
-              });
-            }
-          }, { noAck: true });
-
-          ch.sendToQueue(req.query.method,
-              new Buffer(JSON.stringify(req.body)),
-              { correlationId: taskId, replyTo: replyTo.queue });
-
-          res.status(201);
-          res.location('https:' + pataviSelf + '/task/' + taskId);
-          res.send(taskDescription(taskId, "unknown"));
-        });
-      });
-    });
+    app.post('/task', authRequired, postTask(app, ch, statusExchange)); 
   });
 });
+
+// API routes that do not depend on AMQP connection
 
 app.get('/task/:taskId', function(req, res, next) {
   var taskId = req.params.taskId;
@@ -188,7 +249,8 @@ app.get('/task/:taskId/results', function(req, res) {
   });
 });
 
-app.use(function(err, req, res, next) { // Render 401 Not Authorized errors
+// Render 401 Not Authorized error
+app.use(function(err, req, res, next) {
   console.log(err);
 
   if (err.status !== 401) {
@@ -199,5 +261,5 @@ app.use(function(err, req, res, next) { // Render 401 Not Authorized errors
 });
 
 server.listen(process.env.PATAVI_PORT, function() {
-  console.log("Listening on https://localhost:3000/");
+  console.log("Listening on https:" + pataviSelf);
 });
