@@ -30,9 +30,9 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
       // { event: 'task_accepted', workerId: workerId, taskId: taskId }
       // To a 'monitoring' exchange, topic $taskId.status. Do this for:
       //  - Task accepted
-      //  - Task completed
-      //  - Task failed
       //  - Progress (optional)
+      // Events like "done" and "failed" are handled by the persistence layer, so that
+      // they arrive at the client only once results are available
 
       ch.publish(ex, taskId + ".status", util.asBuffer({ service: q, taskId: taskId, eventType: "accepted", workerId: workerId }));
       async.timesSeries(secs, function(i, next) {
@@ -44,7 +44,6 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
       }, function(err, data) {
         console.log(" [x] Done");
 
-        ch.publish(ex, taskId + ".status", util.asBuffer({ service: q, taskId: taskId, eventType: "completed", workerId: workerId }));
         // Return results
         // Should contain all products of the call
         ch.sendToQueue(msg.properties.replyTo,
