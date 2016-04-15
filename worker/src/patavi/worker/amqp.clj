@@ -57,6 +57,6 @@
   (let [conn (rmq/connect {:host host})
         ch (lch/open conn)]
     (lb/qos ch 1)
-    (lq/declare ch service {:exclusive false})
+    (lq/declare ch service {:exclusive false :durable true :auto-delete false})
     (le/declare ch "rpc_status" "topic" { :durable false })
     (lc/subscribe ch service (handle-incoming service handler) {:auto-ack false})))
