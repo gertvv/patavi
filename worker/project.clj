@@ -1,4 +1,4 @@
-(defproject patavi.worker "0.2.4-1"
+(defproject patavi.worker "0.3"
   :url "http://patavi.com"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"
@@ -20,8 +20,5 @@
         :maximum-reconnect-interval 32000
         :broker-socket "tcp://localhost:7740"}
   :profiles {:uberjar {:aot :all}
-             :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]
-                                  [org.zeromq/jeromq "0.3.4"]]}
-             :production {:dependencies [[org.zeromq/jzmq "3.0.1"]]
-                          :jvm-opts ["-server" "-Djava.library.path=/usr/lib:/usr/local/lib" ]}}
+             :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]]}}
   :main patavi.worker.main)
