@@ -6,7 +6,6 @@
             [patavi.worker.pirate.util :as pirate]
             [clojure.tools.logging :as log]
             [environ.core :refer [env]]
-            [zeromq.zmq :as zmq]
             [me.raynes.fs :as fs]
             [cheshire.core :as json :only [encode decode]]
             [crypto.random :as crypto])
