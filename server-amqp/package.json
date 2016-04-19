@@ -1,0 +1,22 @@
+{
+  "name": "patavi-rabbitmq",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.4.1",
+    "async": "^2.0.0-rc.3",
+    "body-parser": "^1.15.0",
+    "client-certificate-auth": "^0.3.0",
+    "express": "^4.13.4",
+    "express-ws": "^2.0.0-beta",
+    "flake-idgen": "^1.0.0",
+    "pg": "^4.5.3",
+    "when": "^3.7.7"
+  }
+}
