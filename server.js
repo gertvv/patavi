@@ -251,6 +251,17 @@ app.get('/task/:taskId/results', function(req, res) {
   });
 });
 
+app.delete('/task/:taskId', authRequired, function(req, res, next) {
+  pataviStore.deleteTask(req.params.taskId, function(err) {
+    if (err) { // TODO: better error
+      res.send(500);
+      res.send("500 - Internal server error");
+    }
+    res.status(200);
+    res.end();
+  });
+});
+
 // Render 401 Not Authorized error
 app.use(function(err, req, res, next) {
   console.log(err);

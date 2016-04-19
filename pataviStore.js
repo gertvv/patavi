@@ -31,6 +31,10 @@ var persistTask = function(id, creator_name, creator_fingerprint, method, task, 
       callback);
 }
 
+var deleteTask = function(id, callback) {
+  query('DELETE FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], callback);
+}
+
 var persistResult = function(id, status, result, callback) {
   query('UPDATE patavi_task SET status = $2, result = $3, updated_at = NOW() WHERE id = $1',
       [flakeIdAsInt64(id), status, result],
@@ -81,6 +85,7 @@ var getMethod = function(id, callback) {
 
 module.exports = {
   persistTask: persistTask,
+  deleteTask: deleteTask,
   persistResult: persistResult,
   getResult: getResult,
   getStatus: getStatus,
