@@ -99,20 +99,22 @@ var updatesWebSocket = function(app, ch, statusExchange) {
       }
     }
 
-    function consumerStarted(err, ok) {
-      ws.on('close', function() { // stop listening when the client leaves
-        if (ok && ok.consumerTag) {
-          ch.cancel(ok.consumerTag);
-        }
-      });
-      pataviStore.getStatus(taskId, function(err, status) {
-        if (err) {
-          ws.close();
-        } else if (status == "failed" || status == "done") {
-          ws.send(JSON.stringify(resultMessage(service, taskId, status)));
-          ws.close();
-        }
-      });
+    function consumerStarted(service) {
+      return function(err, ok) {
+        ws.on('close', function() { // stop listening when the client leaves
+          if (ok && ok.consumerTag) {
+            ch.cancel(ok.consumerTag);
+          }
+        });
+        pataviStore.getStatus(taskId, function(err, status) {
+          if (err) {
+            ws.close();
+          } else if (status == "failed" || status == "done") {
+            ws.send(JSON.stringify(resultMessage(service, taskId, status)));
+            ws.close();
+          }
+        });
+      }
     }
 
     var taskId = req.params.taskId;
@@ -125,7 +127,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
         return ws.close();
       }
 
-      ch.consume(statusQ.queue, receiveMessage, { noAck: true }, consumerStarted);
+      ch.consume(statusQ.queue, receiveMessage, { noAck: true }, consumerStarted(service));
     });
   };
 }
