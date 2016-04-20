@@ -26,10 +26,8 @@
     var self = this;
     this.results = resultsPromise.promise;
 
-    var urlBase = "https://localhost:3000";
-
     var http = new XMLHttpRequest();
-    http.open("POST", urlBase + "/task?method=" + method, true);
+    http.open("POST", "/task?method=" + method, true);
     http.responseType = "json";
     http.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
     http.send(JSON.stringify(payload));
