@@ -10,14 +10,15 @@ Prerequisites:
 
 Building:
 
-```docker build -t patavi/server-amqp --build-args sha=<commit> .```
+```docker build -t patavi/server-amqp --build-arg sha=<commit> .```
 
 Running:
 
 ```
 docker run -d --name patavi-server-amqp \
-  --link <rabbitmq-container-name>:rabbit \
+  --link <rabbitmq-container-name>:rabbit -e PATAVI_BROKER_HOST=<user>:<pass>@rabbit \
   -p 3000:3000 -e PATAVI_SELF=//localhost:3000 -e PATAVI_PORT=3000 \
   -e PATAVI_DB_HOST=<db-host> -e PATAVI_DB_NAME=<db-name> -e PATAVI_DB_USER=<db-user> -e PATAVI_DB_PASSWORD=<db-pass> \
   patavi/server-amqp
 ```
+

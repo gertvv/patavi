@@ -21,8 +21,6 @@ ENV HOME /var/lib/patavi
 
 ADD ssl ssl
 
-ENV PATAVI_BROKER_HOST=rabbit
-
 ARG sha=feature/amqp
 
 RUN curl -sL https://github.com/gertvv/patavi/archive/$sha.zip -o patavi.zip
