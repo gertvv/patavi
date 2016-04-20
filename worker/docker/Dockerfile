@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:7u65
+FROM phusion/baseimage
 
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
@@ -19,8 +19,10 @@ RUN R -e 'install.packages("RJSONIO", repos="http://cran.rstudio.com/"); if (!re
 RUN R -e 'install.packages("Cairo", repos="http://cran.rstudio.com/"); if (!require("Cairo")) quit(save="no", status=8)'
 RUN R -e 'install.packages("base64enc", repos="http://cran.rstudio.com/"); if (!require("base64enc")) quit(save="no", status=8)'
 
-# curl & unzip
-RUN apt-get install -y -q curl unzip
+# Install JRE
+RUN apt-get install -y -q openjdk-7-jre-headless
+
+RUN apt-get install -y -q unzip
 
 # create patavi user
 RUN useradd --create-home --home /var/lib/patavi patavi
@@ -30,20 +32,12 @@ WORKDIR /var/lib/patavi
 RUN mkdir bin
 ENV PATH /var/lib/patavi/bin:$PATH
 
-# download & install leiningen
-RUN curl -L "https://raw.github.com/technomancy/leiningen/stable/bin/lein" -o bin/lein
-RUN chmod +x bin/lein
-RUN lein upgrade
+RUN mkdir log
+ENV RSERVE_LOGS=log/rserve.log
 
-ARG sha=feature/amqp
-
-RUN curl -sL https://github.com/gertvv/patavi/archive/$sha.zip -o patavi.zip
-RUN unzip patavi.zip && mv patavi-* src
-
-RUN cd src/common && lein install
-RUN cd src/worker && lein with-profile production deps
+ADD patavi.worker-0.3-standalone.jar .
 
 ENV PATAVI_BROKER_HOST=rabbit
 
-RUN echo '#!/bin/bash\ncd src/worker; lein with-profile production run "$@"' > bin/patavi-worker
+RUN echo '#!/bin/bash\njava -jar patavi.worker-0.3-standalone.jar "$@"' > bin/patavi-worker
 RUN chmod +x bin/patavi-worker

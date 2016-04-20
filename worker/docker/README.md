@@ -1,10 +1,17 @@
 Patavi worker dockerfile
 ========================
 
-Build the base image:
+First, build the worker uberjar (from the `worker` directory):
 
 ```
-docker build --build-arg sha=446a38c -t patavi/worker-amqp .
+lein uberjar
+cp target/patavi.worker-0.3-standalone.jar docker/
+```
+
+Then, build the base image:
+
+```
+docker build -t patavi/worker-amqp .
 ```
 
 Build the example worker:

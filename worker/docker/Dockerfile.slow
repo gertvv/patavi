@@ -1,3 +1,5 @@
 FROM patavi/worker-amqp
 
-ENTRYPOINT ["/var/lib/patavi/bin/patavi-worker", "--method", "slow", "--rserve", "-n", "1", "--file", "/var/lib/patavi/src/worker/resources/pirate/slow.R"]
+RUN unzip patavi.worker-0.3-standalone.jar pirate/slow.R 
+
+ENTRYPOINT ["/var/lib/patavi/bin/patavi-worker", "--method", "slow", "--rserve", "-n", "1", "--file", "pirate/slow.R"]
