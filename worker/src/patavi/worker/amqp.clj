@@ -8,7 +8,6 @@
             [cheshire.core :as json]
             [clojure.core.async :refer [thread >!! <!! close! chan]]
             [environ.core :refer [env]]
-            [patavi.common.util :refer [insert]]
             [clojure.tools.logging :as log]))
 
 (defn amqp-options []
