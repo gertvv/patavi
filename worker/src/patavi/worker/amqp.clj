@@ -11,7 +11,7 @@
             [patavi.common.util :refer [insert]]
             [clojure.tools.logging :as log]))
 
-(def ^:const amqp-options
+(defn amqp-options []
   {:host (or (env :patavi-broker-host) "localhost")
    :username (or (env :patavi-broker-user) "guest")
    :password (or (env :patavi-broker-password) "guest")})
@@ -57,7 +57,7 @@
 
 (defn start
   [service handler]
-  (let [conn (rmq/connect amqp-options)
+  (let [conn (rmq/connect (amqp-options))
         ch (lch/open conn)]
     (lb/qos ch 1)
     (lq/declare ch service {:exclusive false :durable true :auto-delete false})
