@@ -6,11 +6,12 @@ var amqp = require('amqplib/callback_api');
 var util = require('./util');
 var pataviStore = require('./pataviStore')
 var async = require('async');
+var persistenceService = require('./persistenceService');
 
 var FlakeId = require('flake-idgen');
 var idGen = new FlakeId(); // FIXME: set unique generator ID
 
-var pataviSelf = process.env.PATAVI_SELF;
+var pataviSelf = util.pataviSelf;
 
 // Serve over HTTPS, ask for client certificate
 var httpsOptions = {
@@ -45,15 +46,6 @@ app.use(express.static('public'));
 
 var ws = require('express-ws')(app, server);
 
-var resultMessage = function(service, taskId, status) {
-  return {
-    service: service,
-    taskId: taskId,
-    eventType: status,
-    eventData: { href: 'https:' + pataviSelf + '/task/' + taskId + '/results' }
-  };
-}
-
 var taskDescription = function(taskId, status) {
   if (status == "failed" || status == "done") {
     return {
@@ -75,7 +67,7 @@ var taskDescription = function(taskId, status) {
 
 var updatesWebSocket = function(app, ch, statusExchange) {
   function getService(taskId, callback) {
-    pataviStore.getMethod(taskId, function(err, service) {
+    pataviStore.getService(taskId, function(err, service) {
       callback(err, service, taskId);
     });
   }
@@ -110,7 +102,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
           if (err) {
             ws.close();
           } else if (status == "failed" || status == "done") {
-            ws.send(JSON.stringify(resultMessage(service, taskId, status)));
+            ws.send(JSON.stringify(util.resultMessage(service, taskId, status)));
             ws.close();
           }
         });
@@ -132,7 +124,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
   };
 }
 
-var postTask = function(app, ch, statusExchange) {
+var postTask = function(app, ch, statusExchange, replyTo) {
   return function(req, res, next) {
     var service = req.query.method;
     var taskId = idGen.next().toString('hex');
@@ -151,39 +143,10 @@ var postTask = function(app, ch, statusExchange) {
       });
     }
 
-    function assertReplyQueue(callback) {
-      ch.assertQueue('', {exclusive: true, autoDelete: true}, callback);
-    }
-
-    function registerReplyConsumer(replyTo, callback) {
-      ch.consume(replyTo.queue, function(msg) {
-        if (msg.properties.correlationId == taskId) {
-          var result = JSON.parse(msg.content.toString());
-          console.log(' * RPC request', taskId, 'terminated');
-          pataviStore.persistResult(taskId, result.status === "failed" ? "failed" : "done", result, function(err) {
-            if (err) {
-              // TODO: handle DB errors
-              return console.log(err);
-            }
-
-            var status = result.status == "failed" ? "failed" : "done";
-            ch.publish(statusExchange, taskId + ".status", util.asBuffer(resultMessage(service, taskId, status)));
-            ch.cancel(msg.fields.consumerTag);
-          });
-        }
-      }, { noAck: true }, function(err, ok) {
-        if (err) {
-          callback(err);
-        } else {
-          callback(null, replyTo);
-        }
-      });
-    }
-
-    function queueTask(replyTo, callback) {
+    function queueTask(callback) {
       ch.sendToQueue(req.query.method,
           new Buffer(JSON.stringify(req.body)),
-          { correlationId: taskId, replyTo: replyTo.queue });
+          { correlationId: taskId, replyTo: replyTo });
 
       res.status(201);
       res.location('https:' + pataviSelf + '/task/' + taskId);
@@ -193,14 +156,13 @@ var postTask = function(app, ch, statusExchange) {
     async.waterfall([
       persistTask,
       assertServiceQueue,
-      assertReplyQueue,
-      registerReplyConsumer,
       queueTask
     ], function(err) {
       next(err);
     });
   }
 }
+
 
 // API routes that depend on AMQP connection
 amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
@@ -217,9 +179,19 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
     var statusExchange = 'rpc_status';
     ch.assertExchange(statusExchange, 'topic', { durable: false });
 
-    app.ws('/task/:taskId/updates', updatesWebSocket(app, ch, statusExchange));
+    var replyTo = 'rpc_result';
+    ch.assertQueue(replyTo, {exclusive: false, durable: true}, function(err) {
+      if (err) {
+        console.log(err);
+        process.exit(1);
+      }
 
-    app.post('/task', authRequired, postTask(app, ch, statusExchange)); 
+      persistenceService(conn, replyTo, statusExchange, pataviStore);
+
+      app.ws('/task/:taskId/updates', updatesWebSocket(app, ch, statusExchange));
+
+      app.post('/task', authRequired, postTask(app, ch, statusExchange, replyTo)); 
+    });
   });
 });
 

@@ -25,9 +25,9 @@ var flakeIdAsInt64 = function(flakeId) {
   return new Buffer(flakeId, 'hex');
 }
 
-var persistTask = function(id, creator_name, creator_fingerprint, method, task, callback) {
+var persistTask = function(id, creator_name, creator_fingerprint, service, task, callback) {
   query('INSERT INTO patavi_task(id, creator_name, creator_fingerprint, method, task) VALUES ($1, $2, $3, $4, $5)',
-      [flakeIdAsInt64(id), creator_name, creator_fingerprint, method, task],
+      [flakeIdAsInt64(id), creator_name, creator_fingerprint, service, task],
       callback);
 }
 
@@ -69,7 +69,7 @@ var getStatus = function(id, callback) {
   });
 }
 
-var getMethod = function(id, callback) {
+var getService = function(id, callback) {
   query('SELECT method FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], function(err, result) {
     if (err) {
       callback(err);
@@ -89,5 +89,5 @@ module.exports = {
   persistResult: persistResult,
   getResult: getResult,
   getStatus: getStatus,
-  getMethod: getMethod
+  getService: getService
 }
