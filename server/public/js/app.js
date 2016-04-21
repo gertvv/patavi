@@ -3,11 +3,11 @@
 angular.module('example', []);
 
 function TaskCtrl($scope) {
-  $scope.method = "slow";
+  $scope.service = "slow";
   $scope.input = "{}";
 
-  $scope.submit = function(method, input) {
-    var task = patavi.submit(method, angular.fromJson(input));
+  $scope.submit = function(service, input) {
+    var task = patavi.submit(service, angular.fromJson(input));
     $scope.error = null;
     $scope.status = null;
     $scope.results = null;

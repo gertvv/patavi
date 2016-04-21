@@ -126,7 +126,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
 
 var postTask = function(app, ch, statusExchange, replyTo) {
   return function(req, res, next) {
-    var service = req.query.method;
+    var service = req.query.service;
     var taskId = idGen.next().toString('hex');
 
     var cert = req.connection.getPeerCertificate();
@@ -144,7 +144,7 @@ var postTask = function(app, ch, statusExchange, replyTo) {
     }
 
     function queueTask(callback) {
-      ch.sendToQueue(req.query.method,
+      ch.sendToQueue(req.query.service,
           new Buffer(JSON.stringify(req.body)),
           { correlationId: taskId, replyTo: replyTo });
 

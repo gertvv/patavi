@@ -70,7 +70,7 @@ The default HTTP API also serves a dashboard where a user can queue tasks, provi
 
 The following routes are available:
 
- - `POST /task?method=$service` will persist and queue up a task for the given service. Expects a JSON request body. If successful, returns `201 Created` with a `Location` header pointing to the newly created task, as well as a JSON response body (see `GET /task/$taskId`).
+ - `POST /task?service=$service` will persist and queue up a task for the given service. Expects a JSON request body. If successful, returns `201 Created` with a `Location` header pointing to the newly created task, as well as a JSON response body (see `GET /task/$taskId`).
  - `GET /task/$taskId` returns basic task information:
     ```
     {

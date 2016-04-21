@@ -5,7 +5,7 @@ CREATE TABLE patavi_task (
 	creator_fingerprint VARCHAR(128) NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-	method VARCHAR(128) NOT NULL,
+	service VARCHAR(128) NOT NULL,
 	task JSONB NOT NULL,
 	status patavi_task_status NOT NULL DEFAULT 'unknown',
 	result JSONB );

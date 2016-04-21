@@ -7,7 +7,7 @@
 }('patavi', this, function () {
   var config = window.patavi || {};
 
-  var Task = function(method, payload) {
+  var Task = function(service, payload) {
     var resultsPromise = when.defer();
 
     function getResults(url, done) {
@@ -27,7 +27,7 @@
     this.results = resultsPromise.promise;
 
     var http = new XMLHttpRequest();
-    http.open("POST", "/task?method=" + method, true);
+    http.open("POST", "/task?service=" + service, true);
     http.responseType = "json";
     http.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
     http.send(JSON.stringify(payload));
@@ -51,8 +51,8 @@
   };
 
   var patavi = {
-    submit: function (method, payload) {
-      return new Task(method, payload);
+    submit: function (service, payload) {
+      return new Task(service, payload);
     }
   };
 
