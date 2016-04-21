@@ -13,19 +13,13 @@ module.exports = function(conn, q, statusExchange, pataviStore) {
       var result = JSON.parse(msg.content.toString());
 
       var status = result.status == "failed" ? "failed" : "done";
-      pataviStore.getService(taskId, function(err, service) { // consider not having service as a field in the message
+      pataviStore.persistResult(taskId, result.status === "failed" ? "failed" : "done", result, function(err) {
         if (err) {
           // TODO: handle DB errors
           return console.log(err);
         }
-        pataviStore.persistResult(taskId, result.status === "failed" ? "failed" : "done", result, function(err) {
-          if (err) {
-            // TODO: handle DB errors
-            return console.log(err);
-          }
-          ch.publish(statusExchange, taskId + ".end", util.asBuffer(util.resultMessage(service, taskId, status)));
-          ch.ack(msg);
-        });
+        ch.publish(statusExchange, taskId + ".end", util.asBuffer(util.resultMessage(taskId, status)));
+        ch.ack(msg);
       });
     }
 

@@ -89,14 +89,13 @@ The following routes are available:
    If the results are not (yet) available a `404 Not Found` response will be given.
  - `WebSocket /task/$taskId/updates` will send messages of the form
    ```
-    {
-      "service": "slow",
-        "taskId": "550e35d797400000",
-        "eventType": "done",
-        "eventData": {
-          "href": "https://patavi-test.drugis.org/task/550e35d797400000/results"
-        }
-    }
+   {
+     "taskId": "550e35d797400000",
+     "eventType": "done",
+     "eventData": {
+       "href": "https://patavi-test.drugis.org/task/550e35d797400000/results"
+     }
+   }
    ```
    If `eventType` is "progress", `eventData` contains progress information as sent by the worker. If `eventType` is "done" or "failed", the `eventData` contains a link to the results. If the task exists and ever completes or has already completed, at least one message with `eventType` "done" or "failed" will be sent to the client. It is therefore always safe to wait for such a message. Usage of the web socket is optional. If progress updates are not important, `/task/$taskId` can be polled periodically instead.
 

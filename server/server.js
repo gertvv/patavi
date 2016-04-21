@@ -66,18 +66,12 @@ var taskDescription = function(taskId, status) {
 }
 
 var updatesWebSocket = function(app, ch, statusExchange) {
-  function getService(taskId, callback) {
-    pataviStore.getService(taskId, function(err, service) {
-      callback(err, service, taskId);
-    });
-  }
-
-  function makeEventQueue(service, taskId, callback) {
+  function makeEventQueue(taskId, callback) {
     ch.assertQueue('', { exclusive: true, autoDelete: true }, function(err, statusQ) {
       if (!err) {
         ch.bindQueue(statusQ.queue, statusExchange, taskId + ".*");
       }
-      callback(err, service, statusQ);
+      callback(err, statusQ);
     });
   }
 
@@ -86,12 +80,12 @@ var updatesWebSocket = function(app, ch, statusExchange) {
       var str = msg.content.toString();
       var json = JSON.parse(str);
       ws.send(str);
-      if (str.eventType === "done" || str.eventType === "failed") {
+      if (json.eventType === "done" || json.eventType === "failed") {
         ws.close();
       }
     }
 
-    function consumerStarted(service) {
+    function consumerStarted(taskId) {
       return function(err, ok) {
         ws.on('close', function() { // stop listening when the client leaves
           if (ok && ok.consumerTag) {
@@ -102,24 +96,21 @@ var updatesWebSocket = function(app, ch, statusExchange) {
           if (err) {
             ws.close();
           } else if (status == "failed" || status == "done") {
-            ws.send(JSON.stringify(util.resultMessage(service, taskId, status)));
+            ws.send(JSON.stringify(util.resultMessage(taskId, status)));
             ws.close();
           }
         });
-      }
+      };
     }
 
     var taskId = req.params.taskId;
-    async.waterfall([
-       async.apply(getService, taskId),
-       makeEventQueue
-    ], function(err, service, statusQ) {
+    makeEventQueue(taskId, function(err, statusQ) {
       if (err) {
         console.log("Error creating websocket", err);
         return ws.close();
       }
 
-      ch.consume(statusQ.queue, receiveMessage, { noAck: true }, consumerStarted(service));
+      ch.consume(statusQ.queue, receiveMessage, { noAck: true }, consumerStarted(taskId));
     });
   };
 }
