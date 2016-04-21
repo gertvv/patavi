@@ -114,6 +114,21 @@ They are completely unaware of the persistence layer, and whether or not it is p
 The worker executes tasks by running an R script using an [RServe](https://rforge.net/Rserve/) instance and passing in the task JSON as parameters.
 It is implemented in Clojure.
 
+## Future extensions
+
+### Persistence / HTTP API: Transient tasks
+
+A method for handling transient tasks (tasks for which long-term persistence of results is not desired).
+For example, the HTTP API could accept an optional TTL parameter, in the ISO 8601 duration format.
+A postgres trigger could periodically remove all tasks that have expired.
+
+### Persistence / HTTP API: Multi-part responses
+
+For graphics and other binary files, it is desirable to not return them as part of the "main" JSON response.
+A possible solution is to allow `multipart/form-data` responses in addition to `application/json`.
+The response would be expected to contain a main JSON file, e.g. "index.json", with links to the other generated files.
+Additional files would be stored as blobs and keyed by name, which could be retrieved from `/task/$taskId/results/$file`.
+
 ## Licence
 
 See [LICENSE](LICENSE).
