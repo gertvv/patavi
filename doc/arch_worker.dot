@@ -1,0 +1,40 @@
+digraph {
+  bgcolor=white;
+  truecolor=true;
+  rankdir=LR;
+  node [style="filled"];
+
+  subgraph cluster_worker {
+    "P_result" [label="P", fillcolor="#00ffff"];
+    "C_task" [label="C", fillcolor="#33ccff"];
+    "worker" [label="Worker"];
+    C_task -> worker ;
+    worker -> P_result ;
+  }
+
+  RServe [label="RServe", shape=rect] ;
+
+  worker -> RServe [dir=both] ;
+
+  subgraph cluster_X_rpc_status {
+    label="rpc_status\ntype=topic";
+    color=transparent;
+    "X_rpc_status" [label="X", fillcolor="#3333CC"] ;
+  }
+
+  subgraph cluster_Q_task {
+    label="$service" ;
+    color=transparent ;
+    "Q_task" [label="{||||}", fillcolor="red", shape="record"] ;
+  }
+
+  subgraph cluster_Q_result {
+    label="$replyTo" ;
+    color=transparent ;
+    "Q_reply_to" [label="{||||}", fillcolor="red", shape="record"] ;
+  }
+
+  Q_task -> C_task ;
+  P_result -> Q_reply_to ;
+  P_result -> X_rpc_status ;
+}

@@ -1,0 +1,56 @@
+digraph {
+  bgcolor=white;
+  truecolor=true;
+  rankdir=LR;
+  node [style="filled"];
+
+
+  subgraph cluster_app {
+    label="Application";
+    app [label="App logic"]
+    "P_task" [label="P", fillcolor="#00ffff"];
+    "C_rpc_status" [label="C", fillcolor="#33ccff"];
+    app -> P_task ;
+    C_rpc_status -> app ;
+  }
+
+  subgraph cluster_messaging {
+    label="Messaging";
+
+    subgraph cluster_Q_results {
+      label="rpc_result" ;
+      color=transparent ;
+      "Q_rpc_result" [label="{||||}", fillcolor="red", shape="record"] ;
+    }
+
+    subgraph cluster_X_rpc_status {
+      label="rpc_status\ntype=topic";
+      color=transparent;
+      "X_rpc_status" [label="X", fillcolor="#3333CC"] ;
+    }
+
+    RPC [label="RPC"] ;
+    RPC -> X_rpc_status ;
+    RPC -> Q_rpc_result ;
+  }
+
+  "DB" [label="DB", shape="cylinder", image="cylinder.gif"];
+
+  subgraph cluster_persistence {
+    label="Persistence" ;
+    "C_persistence" [label="C", fillcolor="#33ccff" ];
+    "P_persistence" [label="P", fillcolor="#00ffff"];
+  }
+
+  app -> DB [dir="both"];
+
+  Q_rpc_result -> C_persistence ;
+  C_persistence -> DB ;
+  C_persistence -> P_persistence ;
+  P_persistence -> X_rpc_status ;
+
+
+  X_rpc_status -> C_rpc_status ;
+
+  P_task -> RPC ;
+}

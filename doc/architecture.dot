@@ -1,0 +1,89 @@
+digraph {
+  bgcolor=white;
+  truecolor=true;
+  rankdir=LR;
+  node [style="filled"];
+
+  subgraph cluster_client {
+    label="Client";
+    "app" [label="Server"];
+    "browser" [label="Browser"];
+    browser -> app;
+  }
+
+  subgraph cluster_HTTP_API {
+    label="HTTP API";
+    "HTTP_POST" [label="POST"];
+    "WS_rpc_status" [label="Status WS"];
+    "HTTP_GET" [label="GET"];
+    "P_task" [label="P", fillcolor="#00ffff"];
+    "C_rpc_status" [label="C", fillcolor="#33ccff"];
+    HTTP_POST -> P_task ;
+    C_rpc_status -> WS_rpc_status ;
+  }
+  HTTP_POST -> DB ;
+  DB -> HTTP_GET ;
+  DB -> WS_rpc_status ;
+
+  WS_rpc_status -> browser ;
+  HTTP_GET -> browser ;
+  app -> HTTP_POST;
+
+  subgraph cluster_Q_results {
+    label="rpc_result" ;
+    color=transparent ;
+    "Q_rpc_result" [label="{||||}", fillcolor="red", shape="record"] ;
+  }
+
+  subgraph cluster_persistence {
+    label="Persistence" ;
+    "C_persistence" [label="C", fillcolor="#33ccff" ];
+    "P_persistence" [label="P", fillcolor="#00ffff"];
+  }
+
+  "DB" [label="DB", shape="cylinder", image="cylinder.gif"];
+
+  Q_rpc_result -> C_persistence ;
+  C_persistence -> DB ;
+  C_persistence -> P_persistence ;
+  P_persistence -> X_rpc_status ;
+
+  subgraph cluster_Q_slow {
+    label="Task queue: slow" ;
+    color=transparent ;
+    "Q_slow" [label="{||||}", fillcolor="red", shape="record"] ;
+  }
+
+  "C_slow_1" [label="C", fillcolor="#33ccff"];
+  "C_slow_2" [label="C", fillcolor="#33ccff"];
+
+  "Q_slow" -> "C_slow_1"
+  "Q_slow" -> "C_slow_2"
+
+  subgraph cluster_Q_echo {
+    label = "Task queue: echo" ;
+    color = transparent ;
+    "Q_echo" [label="{||||}", fillcolor="red", shape="record"] ;
+  }
+
+  "C_echo_1" [label="C", fillcolor="#33ccff"];
+  "Q_echo" -> "C_echo_1"
+
+  subgraph cluster_X_rpc_status {
+    label="rpc_status\ntype=topic";
+    color=transparent;
+    "X_rpc_status" [label="X", fillcolor="#3333CC"] ;
+  }
+
+  P_task -> Q_slow ;
+  P_task -> Q_echo ;
+
+  C_slow_1 -> X_rpc_status ;
+  C_slow_1 -> Q_rpc_result ;
+  C_slow_2 -> X_rpc_status ;
+  C_slow_2 -> Q_rpc_result ;
+  C_echo_1 -> X_rpc_status ;
+  C_echo_1 -> Q_rpc_result ;
+
+  X_rpc_status -> C_rpc_status ;
+}

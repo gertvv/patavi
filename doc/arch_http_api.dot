@@ -1,0 +1,42 @@
+digraph {
+  bgcolor=white;
+  truecolor=true;
+  rankdir=LR;
+  node [style="filled"];
+
+  subgraph cluster_client {
+    label="Client";
+    "app" [label="Server"];
+    "browser" [label="Browser"];
+    browser -> app;
+  }
+
+  subgraph cluster_HTTP_API {
+    label="HTTP API";
+    "HTTP_POST" [label="POST"];
+    "WS_rpc_status" [label="Status WS"];
+    "HTTP_GET" [label="GET"];
+    "P_task" [label="P", fillcolor="#00ffff"];
+    "C_rpc_status" [label="C", fillcolor="#33ccff"];
+    HTTP_POST -> P_task ;
+    WS_rpc_status -> C_rpc_status [dir=back] ;
+  }
+  HTTP_POST -> DB ;
+  DB -> HTTP_GET ;
+  DB -> WS_rpc_status ;
+
+  browser -> WS_rpc_status [dir=back] ;
+  browser -> HTTP_GET [dir=back] ;
+  app -> HTTP_POST;
+
+
+  subgraph cluster_backend {
+    label="Backend";
+    RPC [label="RPC + persistence"] ;
+    "DB" [label="DB", image="cylinder.gif", shape=rect]; // shape=cylinder not yet widely supported
+    DB -> RPC [dir=back] ;
+  }
+
+  P_task -> RPC ;
+  C_rpc_status -> RPC [dir=back] ;
+}
