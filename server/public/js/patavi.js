@@ -1,60 +1,42 @@
 'use strict';
 
-!function (name, context, definition) {
-  if (typeof module != 'undefined' && module.exports) module.exports = definition();
-  else if (typeof define == 'function' && define.amd) define(definition);
-  else context[name] = definition();
-}('patavi', this, function () {
-  var config = window.patavi || {};
+define(['angular'], function(angular) {
+  angular.module('patavi', []).service('PataviService', ['$q', '$http', function($q, $http) {
+    // uriOrPromise: websocket URI or a promise resolving to a websocket URI
+    // returns: a promise for the task results, which also sends notifications
+    var listenForUpdates = function(uriOrPromise) {
+      var uriPromise = uriOrPromise.then ? uriOrPromise : $q(function(resolve) { resolve(uriOrPromise); });
 
-  var Task = function(service, payload) {
-    var resultsPromise = when.defer();
+      var resultsPromise = $q.defer();
 
-    function getResults(url, done) {
-      console.log(url);
-      var http = new XMLHttpRequest();
-      http.open("GET", url, true);
-      http.responseType = "json";
-      http.send();
-      http.onreadystatechange = function() {
-        if (http.readyState === 4 && http.status === 200) {
-          done(http.response);
-        }
+      function getResults(url, done) {
+        $http.get(url).then(function(response) {
+          done(response.data);
+        });
       }
-    }
 
-    var self = this;
-    this.results = resultsPromise.promise;
-
-    var http = new XMLHttpRequest();
-    http.open("POST", "/task?service=" + service, true);
-    http.responseType = "json";
-    http.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-    http.send(JSON.stringify(payload));
-    http.onreadystatechange = function() {
-      if (http.readyState === 4 && http.status === 201) {
-        var loc = http.response._links.updates.href;
-        var socket = new WebSocket(loc);
+      uriPromise.then(function(uri) {
+        var socket = new WebSocket(uri);
         socket.onmessage = function (event) {
           var data = JSON.parse(event.data);
           if (data.eventType === "done") {
             socket.close();
             getResults(data.eventData.href, resultsPromise.resolve);
-          } else if (data.eventType === "failed") {
+          } else if (data.evenType === "failed") {
             socket.close();
-            getResults(data.eventData.href, resultsPromise.reject);
+            getResults(data.eventData.href, resultsPromise.reject)
           }
           resultsPromise.notify(data);
         }
-      }
-    }
-  };
+      }, function(error) {
+        resultsPromise.reject({ 'status': 'error', 'error': error });
+      });
 
-  var patavi = {
-    submit: function (service, payload) {
-      return new Task(service, payload);
-    }
-  };
+      return resultsPromise.promise;
+    };
 
-  return patavi;
+    return {
+      listen: listenForUpdates
+    };
+  }]);
 });
