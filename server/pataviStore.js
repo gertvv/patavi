@@ -25,9 +25,9 @@ var flakeIdAsInt64 = function(flakeId) {
   return new Buffer(flakeId, 'hex');
 }
 
-var persistTask = function(id, creator_name, creator_fingerprint, service, task, callback) {
-  query('INSERT INTO patavi_task(id, creator_name, creator_fingerprint, service, task) VALUES ($1, $2, $3, $4, $5)',
-      [flakeIdAsInt64(id), creator_name, creator_fingerprint, service, task],
+var persistTask = function(id, creator_name, creator_fingerprint, service, task, ttl, callback) {
+  query('INSERT INTO patavi_task(id, creator_name, creator_fingerprint, service, task, time_to_live) VALUES ($1, $2, $3, $4, $5, $6)',
+      [flakeIdAsInt64(id), creator_name, creator_fingerprint, service, task, ttl],
       callback);
 }
 

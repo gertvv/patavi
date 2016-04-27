@@ -118,12 +118,13 @@ var updatesWebSocket = function(app, ch, statusExchange) {
 var postTask = function(app, ch, statusExchange, replyTo) {
   return function(req, res, next) {
     var service = req.query.service;
+    var ttl = req.query.ttl ? req.query.ttl : null;
     var taskId = idGen.next().toString('hex');
 
     var cert = req.connection.getPeerCertificate();
 
     function persistTask(callback) {
-      pataviStore.persistTask(taskId, cert.subject.CN, cert.fingerprint, service, req.body, function(err) {
+      pataviStore.persistTask(taskId, cert.subject.CN, cert.fingerprint, service, req.body, ttl, function(err) {
         callback(err);
       });
     }
