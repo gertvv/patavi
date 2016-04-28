@@ -16,9 +16,10 @@ requirejs(['angular', 'patavi'], function(angular, patavi) {
   angular.module('example', ['patavi'])
   .controller('TaskCtrl', ['$scope', '$http', '$q', 'PataviService', function($scope, $http, $q, Patavi) {
     $scope.service = "slow";
+    $scope.ttl = "PT5M";
     $scope.input = "{}";
 
-    $scope.submit = function(service, input) {
+    $scope.submit = function(service, ttl, input) {
       $scope.error = null;
       $scope.status = null;
       $scope.results = null;
@@ -26,7 +27,7 @@ requirejs(['angular', 'patavi'], function(angular, patavi) {
       var taskUriPromise = $q.defer();
       var task = Patavi.listen(taskUriPromise.promise);
 
-      $http.post('/task?service=' + service, input).then(function(response) {
+      $http.post('/task', input, { 'params': { 'service': service, 'ttl': ttl ? ttl : undefined } }).then(function(response) {
         if (response.status != 201) {
           $scope.error = { 'message': 'Error queueing task: expected response status 201', 'status': response.status };
         } else if (response.data && response.data._links && response.data._links.updates && response.data._links.updates.href) {

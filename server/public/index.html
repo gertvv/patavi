@@ -21,12 +21,14 @@
     <div ng-controller="TaskCtrl" class="row">
       <div class="columns large-4">
 
-        <label>Method</label>
+        <label>Service</label>
         <input type="text" ng-model="service">
+        <label>Time to live (leave empty for indefinite)</label>
+        <input type="text" ng-model="ttl">
         <label>Input (JSON)</label>
         <textarea ng-model="input">
         </textarea>
-        <button class="small secondary button" ng-click="submit(service, input)">Submit new task</button>
+        <button class="small secondary button" ng-click="submit(service, ttl, input)">Submit new task</button>
       </div>
       <div class="columns large-offset-1 large-7">
         <label>progress</label>
