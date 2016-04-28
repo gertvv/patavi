@@ -13,6 +13,8 @@ RUN apt-get install -y nodejs
 
 RUN apt-get install -y unzip
 
+RUN npm install -g bower
+
 RUN useradd --create-home --home /var/lib/patavi patavi
 
 USER patavi
@@ -27,5 +29,6 @@ RUN curl -sL https://github.com/gertvv/patavi/archive/$sha.zip -o patavi.zip
 RUN unzip patavi.zip && mv patavi-*/server/* .
 
 RUN npm install --production
+RUN cd public && bower install
 
 CMD node server

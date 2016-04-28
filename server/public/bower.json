@@ -1,0 +1,27 @@
+{
+  "name": "patavi-dashboard",
+  "version": "0.2.4",
+  "homepage": "https://github.com/gertvv/patavi",
+  "authors": [
+    "Gert van Valkenhoef <g.h.m.van.valkenhoef@rug.nl>"
+  ],
+  "description": "Patavi dashboard",
+  "main": "js/app.js",
+  "moduleType": [
+    "amd"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "1.5.5",
+    "angular-patavi-client": "https://github.com/gertvv/angular-patavi-client.git#1.0.0",
+    "requirejs": "2.2.0"
+  }
+}

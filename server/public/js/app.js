@@ -3,7 +3,8 @@
 requirejs.config({
   baseUrl: 'js',
   paths: {
-    'angular': 'https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.min'
+    'angular': '/bower_components/angular/angular.min',
+    'patavi': '/bower_components/angular-patavi-client/patavi'
   },
   shim: {
     angular: {
