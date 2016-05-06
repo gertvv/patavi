@@ -32,6 +32,10 @@ The following components need to be running in the default configuration:
 
 Clients can queue jobs at the server if they present an SSL client certificate trusted by the server.
 
+The following will start a RabbitMQ instance with default (guest/guest) credentials:
+
+```docker run -d --hostname my-rabbit --name my-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management```
+
 ## Messaging architecture
 
 ![Messaging architecture overview](doc/arch_messaging.png)
