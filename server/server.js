@@ -51,6 +51,7 @@ var taskDescription = function(taskId, status) {
     return {
       'status': status,
       '_links': {
+        self: { href: 'https:' + pataviSelf + '/task/' + taskId},
         results: { href: 'https:' + pataviSelf + '/task/' + taskId + '/results' },
         updates: { href: 'wss:' + pataviSelf + '/task/' + taskId + '/updates' }
       }
@@ -59,6 +60,7 @@ var taskDescription = function(taskId, status) {
     return {
       'status': status,
       '_links': {
+        self: { href: 'https:' + pataviSelf + '/task/' + taskId},
         updates: { href: 'wss:' + pataviSelf + '/task/' + taskId + '/updates' }
       }
     };
@@ -182,7 +184,7 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
 
       app.ws('/task/:taskId/updates', updatesWebSocket(app, ch, statusExchange));
 
-      app.post('/task', authRequired, postTask(app, ch, statusExchange, replyTo)); 
+      app.post('/task', authRequired, postTask(app, ch, statusExchange, replyTo));
     });
   });
 });
@@ -192,7 +194,7 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
 app.get('/task/:taskId', function(req, res, next) {
   var taskId = req.params.taskId;
   pataviStore.getStatus(taskId, function(err, status) {
-    if (err) next(err); 
+    if (err) next(err);
     res.send(taskDescription(taskId, status));
   });
 });
