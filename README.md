@@ -64,6 +64,7 @@ The persistence module is embedded in the HTTP API server, but is only loosely c
 The HTTP API is an additional layer on top of messaging and persistence.
 Write routes require a valid and trusted SSL client certificate to be presented to the server, while read-only routes are world readable.
 In the typical configuration displayed above, a server application is responsible for queueing tasks, while status updates and results can be retrieved directly by a client-side application in the browser.
+A bower module for angular applications using this pattern is available at [gertvv/angular-patavi-client](https://github.com/gertvv/angular-patavi-client).
 The default HTTP API also serves a dashboard where a user can queue tasks, provided that a trusted client certificate is configured in their browser.
 
 The following routes are available:
