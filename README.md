@@ -52,7 +52,7 @@ To enable persistence of tasks and results, the application queueing the task is
 It must also set the "reply to" queue to the queue from which the persistence module will consume results (in this case, `rpc_result`).
 The persistence module will consume results using fair dispatch, and acknowledges the result message only after it has been successfully persisted to the database.
 Since the application can no longer consume the result message, the persistence layer is responsible for sending a message to the `rpc_status` queue with topic `$task-id.end`.
-The application can wait for results by subscribing to the `$task-id.end` topic, and/or by polling the database.
+The application can wait for results by subscribing to the `$task-id.end` topic, or by polling the database.
 
 Our implementation currently assumes results are represented as JSON.
 The persistence module is embedded in the HTTP API server, but is only loosely coupled and could be made to run completely separately and replicated.
@@ -69,6 +69,7 @@ The default HTTP API also serves a dashboard where a user can queue tasks, provi
 The following routes are available:
 
  - `POST /task?service=$service` will persist and queue up a task for the given service. Expects a JSON request body. If successful, returns `201 Created` with a `Location` header pointing to the newly created task, as well as a JSON response body (see `GET /task/$taskId`).
+ - `POST /task?service=$service&ttl=$ttl` queues up a task for the given service, with a time to live set by `$ttl` in ISO duration format, e.g. `PT5M` means a time to live of 5 minutes. The task and results will be removed some time after the time to live has expired, counting from task completion.
  - `GET /task/$taskId` returns basic task information:
     ```
     {
@@ -83,6 +84,7 @@ The following routes are available:
     }
     ```
    The link to results will only appear once results are actually available.
+ - `DELETE /task/$taskId` will remove a task and its results from the database.
  - `GET /task/$taskId/results` will return the results of task execution as is, if available.
    If the results are not (yet) available a `404 Not Found` response will be given.
  - `WebSocket /task/$taskId/updates` will send messages of the form
