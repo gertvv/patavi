@@ -7,18 +7,12 @@
   Comments and suggestions are much appreciated.**
 
 ## Introduction
-Patavi is a distributed system for exposing
-R scripts as web services.
-It was created out of the need to run
-potentially very long running R scripts in a web browser while
-providing an interface to see the status updates.
+Patavi is a distributed system for exposing R scripts as web services.
+It was created out of the need to run potentially very long running R scripts in a web browser while providing an interface to see the status updates.
 
 ## Alternatives
-If you are looking for just a web-based interactive R environment
-checkout [RStudio Shiny](http://www.rstudio.com/shiny/). If you just
-want to expose R scripts as HTTP see
-[FastRWeb](https://www.rforge.net/FastRWeb/) or one of the [many other
-options](http://cran.r-project.org/doc/FAQ/R-FAQ.html#R-Web-Interfaces).
+If you are looking for just a web-based interactive R environment checkout [RStudio Shiny](http://www.rstudio.com/shiny/) or [OpenCPU](https://www.opencpu.org/).
+If you just want to expose R scripts through HTTP see [FastRWeb](https://www.rforge.net/FastRWeb/) or one of the [many other options](http://cran.r-project.org/doc/FAQ/R-FAQ.html#R-Web-Interfaces).
 
 
 ## Usage
@@ -48,7 +42,7 @@ The task producer specifies a "reply to" queue and a "correlation id" (task id).
 The "reply to" can be an anonymous temporary queue, but in the example above it is a named queue `rpc_result` (to enable persistence, explained below).
 Upon completing a task, the worker submits the results to the "reply to" queue (using the "correlation id"), and then acknowledges the message from the task queue.
 
-Optionally, workers can produce status updates by sending messages to the `rpc_status` topic queue, using `$task-id.status` as the topic.
+Optionally, workers can produce status updates by sending messages to the `rpc_status` topic exchange, using `$task-id.status` as the topic.
 
 ## Persistence
 
