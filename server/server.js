@@ -134,19 +134,18 @@ var postTask = function(app, ch, statusExchange, replyTo) {
     }
 
     function assertServiceQueue(callback) {
-      ch.assertQueue(service, {exclusive: false, durable: true}, function(err, queue) {
-        callback(err);
-      });
+      ch.assertQueue(service, {exclusive: false, durable: true}, callback);
     }
 
-    function queueTask(callback) {
-      ch.sendToQueue(req.query.service,
+    function queueTask(q, callback) {
+      ch.sendToQueue(service,
           new Buffer(JSON.stringify(req.body)),
           { correlationId: taskId, replyTo: replyTo });
 
       res.status(201);
       res.location('https:' + pataviSelf + '/task/' + taskId);
-      res.send(taskDescription(taskId, req.query.service, "unknown"));
+      var s = q.consumerCount === 0 ? "no-workers" : "unknown";
+      res.send(taskDescription(taskId, service, s));
     }
 
     async.waterfall([
