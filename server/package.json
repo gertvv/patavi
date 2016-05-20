@@ -11,6 +11,7 @@
   "dependencies": {
     "amqplib": "^0.4.1",
     "async": "^2.0.0-rc.3",
+    "biguint-format": "^1.0.0",
     "body-parser": "^1.15.0",
     "client-certificate-auth": "^0.3.0",
     "express": "^4.13.4",

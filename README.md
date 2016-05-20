@@ -85,6 +85,7 @@ The following routes are available:
     }
     ```
    The link to results will only appear once results are actually available.
+ - `GET /status?task=$taskId1&task=$taskId2` returns basic task information for multiple tasks as a JSON array.
  - `DELETE /task/$taskId` will remove a task and its results from the database.
  - `GET /task/$taskId/results` will return the results of task execution as is, if available.
    If the results are not (yet) available a `404 Not Found` response will be given.

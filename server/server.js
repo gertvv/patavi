@@ -13,6 +13,10 @@ var idGen = new FlakeId(); // FIXME: set unique generator ID
 
 var pataviSelf = util.pataviSelf;
 
+var isValidTaskId = function(id) { return /[0-9a-f]{16}/.test(id); };
+
+var badRequestError = function() { var error = new Error("Bad request"); error.status = 400; return error; };
+
 // Serve over HTTPS, ask for client certificate
 var httpsOptions = {
   key: fs.readFileSync('ssl/server-key.pem'),
@@ -46,25 +50,20 @@ app.use(express.static('public'));
 
 var ws = require('express-ws')(app, server);
 
-var taskDescription = function(taskId, status) {
+var taskDescription = function(taskId, service, status) {
+  var description = {
+    'id': taskId,
+    'service': service,
+    'status': status,
+    '_links': {
+      self: { href: 'https:' + pataviSelf + '/task/' + taskId},
+      updates: { href: 'wss:' + pataviSelf + '/task/' + taskId + '/updates' }
+    }
+  };
   if (status == "failed" || status == "done") {
-    return {
-      'status': status,
-      '_links': {
-        self: { href: 'https:' + pataviSelf + '/task/' + taskId},
-        results: { href: 'https:' + pataviSelf + '/task/' + taskId + '/results' },
-        updates: { href: 'wss:' + pataviSelf + '/task/' + taskId + '/updates' }
-      }
-    };
-  } else {
-    return {
-      'status': status,
-      '_links': {
-        self: { href: 'https:' + pataviSelf + '/task/' + taskId},
-        updates: { href: 'wss:' + pataviSelf + '/task/' + taskId + '/updates' }
-      }
-    };
+    description._links.results = { href: 'https:' + pataviSelf + '/task/' + taskId + '/results' };
   }
+  return description;
 }
 
 var updatesWebSocket = function(app, ch, statusExchange) {
@@ -94,11 +93,11 @@ var updatesWebSocket = function(app, ch, statusExchange) {
             ch.cancel(ok.consumerTag);
           }
         });
-        pataviStore.getStatus(taskId, function(err, status) {
+        pataviStore.getInfo(taskId, function(err, info) {
           if (err) {
             ws.close();
-          } else if (status == "failed" || status == "done") {
-            ws.send(JSON.stringify(util.resultMessage(taskId, status)));
+          } else if (info.status == "failed" || info.status == "done") {
+            ws.send(JSON.stringify(util.resultMessage(taskId, info.status)));
             ws.close();
           }
         });
@@ -106,6 +105,9 @@ var updatesWebSocket = function(app, ch, statusExchange) {
     }
 
     var taskId = req.params.taskId;
+    if (!isValidTaskId(taskId)) {
+      return ws.close();
+    }
     makeEventQueue(taskId, function(err, statusQ) {
       if (err) {
         console.log("Error creating websocket", err);
@@ -144,7 +146,7 @@ var postTask = function(app, ch, statusExchange, replyTo) {
 
       res.status(201);
       res.location('https:' + pataviSelf + '/task/' + taskId);
-      res.send(taskDescription(taskId, "unknown"));
+      res.send(taskDescription(taskId, req.query.service, "unknown"));
     }
 
     async.waterfall([
@@ -193,36 +195,48 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
 
 app.get('/task/:taskId', function(req, res, next) {
   var taskId = req.params.taskId;
-  pataviStore.getStatus(taskId, function(err, status) {
-    if (err) next(err);
-    res.send(taskDescription(taskId, status));
+  if (!isValidTaskId(taskId)) {
+    return next(badRequestError());
+  }
+  pataviStore.getInfo(taskId, function(err, info) {
+    if (err) return next(err);
+    res.send(taskDescription(taskId, info.service, info.status));
   });
 });
 
-app.get('/task/:taskId/results', function(req, res) {
+app.get('/status', function(req, res, next) {
+  var tasks = req.query.task;
+  if (typeof tasks === 'string') {
+    tasks = [ tasks ];
+  }
+  if (!tasks.every(isValidTaskId)) {
+    return next(badRequestError());
+  }
+  pataviStore.getMultiInfo(tasks, function(err, info) {
+    if (err) return next(err);
+    res.send(info.map(function(item) { return taskDescription(item.id, item.service, item.status); }));
+  });
+});
+
+app.get('/task/:taskId/results', function(req, res, next) {
   var taskId = req.params.taskId;
+  if (!isValidTaskId(taskId)) {
+    return next(badRequestError());
+  }
   pataviStore.getResult(taskId, function(err, result) {
-    if (err) {
-      if (err.status == 404) {
-        res.status(404);
-        res.send("404 - Results not found");
-      } else {
-        res.send(500);
-        res.send("500 - Internal server error");
-      }
-    } else {
-      res.header("Content-Type", "application/json");
-      res.send(result);
-    }
+    if (err) return next(err);
+    res.header("Content-Type", "application/json");
+    res.send(result);
   });
 });
 
 app.delete('/task/:taskId', authRequired, function(req, res, next) {
-  pataviStore.deleteTask(req.params.taskId, function(err) {
-    if (err) { // TODO: better error
-      res.send(500);
-      res.send("500 - Internal server error");
-    }
+  var taskId = req.params.taskId;
+  if (!isValidTaskId(taskId)) {
+    return next(badRequestError());
+  }
+  pataviStore.deleteTask(taskId, function(err) {
+    if (err) return next(err);
     res.status(200);
     res.end();
   });
@@ -230,10 +244,8 @@ app.delete('/task/:taskId', authRequired, function(req, res, next) {
 
 // Render 401 Not Authorized error
 app.use(function(err, req, res, next) {
-  console.log(err);
-
   if (err.status !== 401) {
-    next();
+    return next(err);
   }
 
   res.status(401).sendFile('error401.html', { root: __dirname });
