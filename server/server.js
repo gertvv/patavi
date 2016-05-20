@@ -199,6 +199,9 @@ app.get('/task/:taskId', function(req, res, next) {
   }
   pataviStore.getInfo(taskId, function(err, info) {
     if (err) return next(err);
+    if (info.status === "done" || info.status === "failed") {
+      res.header("Cache-Control", "public, max-age=31557600"); // completed tasks never change
+    }
     res.send(taskDescription(taskId, info.service, info.status));
   });
 });
@@ -222,9 +225,15 @@ app.get('/task/:taskId/results', function(req, res, next) {
   if (!isValidTaskId(taskId)) {
     return next(badRequestError());
   }
+  if (req.headers["if-modified-since"] || req.headers["if-none-match"]) { // results never change
+    res.status(304);
+    res.end();
+    return;
+  }
   pataviStore.getResult(taskId, function(err, result) {
     if (err) return next(err);
     res.header("Content-Type", "application/json");
+    res.header("Cache-Control", "public, max-age=31557600"); // results never change
     res.send(result);
   });
 });
