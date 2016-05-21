@@ -40,7 +40,7 @@ var deleteTask = function(id, callback) {
 
 var persistResult = function(id, status, result, callback) {
   query('UPDATE patavi_task SET status = $2, result = $3, updated_at = NOW() WHERE id = $1',
-      [flakeIdAsInt64(id), status, result],
+      [flakeIdAsInt64(id), status, result.index],
       callback);
 };
 

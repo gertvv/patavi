@@ -19,10 +19,8 @@ save.plot <- function(plot.fn, name, type="png") {
   plot.fn()
   dev.off()
   if(type == "svg") { tmp <- paste(tmp, ".svg", sep="") }
-  content <- readBin(tmp, 'raw', 1024*1024) #1MB filesize limit
-  unlink(tmp)
   file <- list(name=paste(name, type, sep="."),
-               content=dataURI(data=content, mime=mimes[[type]]),
+               file=tmp,
                mime=mimes[[type]])
 
   assign("files", append(files, list(file)), envir=parent.env(environment()))

@@ -24,3 +24,11 @@ $$;
 CREATE TRIGGER trigger_patavi_task_timeout
   AFTER INSERT ON patavi_task
   EXECUTE PROCEDURE patavi_task_timeout();
+
+CREATE TABLE patavi_file (
+  task_id BIGINT REFERENCES patavi_task(id) ON DELETE CASCADE,
+  path VARCHAR(256),
+  content_type VARCHAR(128),
+  content BYTEA,
+  PRIMARY KEY (task_id, path)
+);

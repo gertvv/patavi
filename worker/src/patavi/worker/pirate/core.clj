@@ -92,8 +92,8 @@
         (pirate/assign R "params" (json/encode params))
         (pirate/assign R "files" [])
         (let [call (format "exec(%s, params)" method)
-              result (pirate/parse R call)]
-          {:method method
-           :results (json/decode result)
-           :_embedded (pirate/retrieve R "files")}))
+              result (pirate/parse R call)
+              files (pirate/retrieve R "files")]
+          {:index result
+           :files (doall (map (fn [desc] (assoc (dissoc desc "file") "content" (pirate/read-and-unlink-file! R (desc "file")))) files))}))
       (catch Exception e (do (log/error e) (throw (Exception. (cause e) e)))))))
