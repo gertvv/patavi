@@ -1,6 +1,6 @@
 'use strict';
 
-var pg = require('pg');
+var async = require('async');
 var format = require('biguint-format');
 
 var config = {
@@ -10,42 +10,47 @@ var config = {
   host: process.env.PATAVI_DB_HOST
 };
 
-var query = function(text, values, callback) {
-  pg.connect(config, function(err, client, done) {
-    if (err) {
-      callback(err);
-      return done();
-    }
-
-    client.query(text, values, function(err, result) {
-      done();
-      callback(err, result);
-    });
-  });
-};
+var db = require('./dbUtils')(config);
 
 var flakeIdAsInt64 = function(flakeId) {
   return new Buffer(flakeId, 'hex');
 };
 
 var persistTask = function(id, creator_name, creator_fingerprint, service, task, ttl, callback) {
-  query('INSERT INTO patavi_task(id, creator_name, creator_fingerprint, service, task, time_to_live) VALUES ($1, $2, $3, $4, $5, $6)',
+  db.query('INSERT INTO patavi_task(id, creator_name, creator_fingerprint, service, task, time_to_live) VALUES ($1, $2, $3, $4, $5, $6)',
       [flakeIdAsInt64(id), creator_name, creator_fingerprint, service, task, ttl],
       callback);
 };
 
 var deleteTask = function(id, callback) {
-  query('DELETE FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], callback);
+  db.query('DELETE FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], callback);
 };
 
 var persistResult = function(id, status, result, callback) {
-  query('UPDATE patavi_task SET status = $2, result = $3, updated_at = NOW() WHERE id = $1',
-      [flakeIdAsInt64(id), status, result.index],
-      callback);
+  var idBuffer = flakeIdAsInt64(id);
+
+  function resultsTransaction(client, callback) {
+    function saveIndex(callback) {
+      db.query('UPDATE patavi_task SET status = $2, result = $3, updated_at = NOW() WHERE id = $1',
+          [idBuffer, status, result.index],
+          callback);
+    }
+    function saveFile(file, callback) {
+      db.query('INSERT INTO patavi_file (task_id, path, content_type, content) VALUES ($1, $2, $3, $4)',
+          [idBuffer, file.path, file.content_type, file.content],
+          callback);
+    }
+    function saveFiles(callback) {
+      async.each(result.files, saveFile, callback);
+    }
+    async.parallel([saveIndex, saveFiles], callback);
+  }
+
+  db.runInTransaction(resultsTransaction, callback);
 };
 
 var getResult = function(id, callback) {
-  query('SELECT result FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], function(err, result) {
+  db.query('SELECT result FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], function(err, result) {
     if (err) {
       callback(err);
     } else if (result.rows.length == 1 && result.rows[0].result) {
@@ -58,8 +63,23 @@ var getResult = function(id, callback) {
   });
 };
 
+var getFile = function(id, fileName, callback) {
+  db.query('SELECT content_type, content FROM patavi_file WHERE task_id = $1 AND path = $2',
+      [flakeIdAsInt64(id), fileName], function(err, result) {
+    if (err) {
+      callback(err);
+    } else if (result.rows.length == 1) {
+      callback(null, result.rows[0]);
+    } else {
+      var error = new Error("Not found");
+      error.status = 404;
+      callback(error);
+    }
+  });
+}
+
 var getInfo = function(id, callback) {
-  query('SELECT service, status FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], function(err, result) {
+  db.query('SELECT service, status FROM patavi_task WHERE id = $1', [flakeIdAsInt64(id)], function(err, result) {
     if (err) {
       callback(err);
     } else if (result.rows.length == 1) {
@@ -74,7 +94,7 @@ var getInfo = function(id, callback) {
 
 var getMultiInfo = function(ids, callback) {
   ids = ids.map(function(id) { return format(flakeIdAsInt64(id), 'dec'); });
-  query('SELECT to_hex(id) AS id, service, status FROM patavi_task WHERE id = ANY($1::BIGINT[])', [ids], function(err, result) {
+  db.query('SELECT to_hex(id) AS id, service, status FROM patavi_task WHERE id = ANY($1::BIGINT[])', [ids], function(err, result) {
     if (err) {
       callback(err);
     } else {
@@ -88,6 +108,7 @@ module.exports = {
   deleteTask: deleteTask,
   persistResult: persistResult,
   getResult: getResult,
+  getFile: getFile,
   getInfo: getInfo,
   getMultiInfo: getMultiInfo
 };
