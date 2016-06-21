@@ -76,11 +76,14 @@ var updatesWebSocket = function(app, ch, statusExchange) {
     });
   }
 
+  function wsSendErrorHandler(error) {
+    if (error) console.log("Error sending on WebSocket: ", error);
+  }
   return function(ws, req) {
     function receiveMessage(msg) {
       var str = msg.content.toString();
       var json = JSON.parse(str);
-      ws.send(str);
+      ws.send(str, wsSendErrorHandler);
       if (json.eventType === "done" || json.eventType === "failed") {
         ws.close();
       }
@@ -97,7 +100,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
           if (err) {
             ws.close();
           } else if (info.status == "failed" || info.status == "done") {
-            ws.send(JSON.stringify(util.resultMessage(taskId, info.status)));
+            ws.send(JSON.stringify(util.resultMessage(taskId, info.status)), wsSendErrorHandler);
             ws.close();
           }
         });

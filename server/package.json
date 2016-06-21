@@ -15,7 +15,7 @@
     "body-parser": "^1.15.0",
     "client-certificate-auth": "^0.3.0",
     "express": "^4.13.4",
-    "express-ws": "^2.0.0-beta",
+    "express-ws": "^2.0.0-rc.1",
     "flake-idgen": "^1.0.0",
     "pg": "^4.5.3",
     "when": "^3.7.7"
