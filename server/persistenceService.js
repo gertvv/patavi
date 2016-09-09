@@ -1,3 +1,4 @@
+'use strict';
 var util = require('./util');
 var stream = require('stream');
 var Busboy = require('busboy');
@@ -29,7 +30,7 @@ function parseMultipart(content, contentType, callback) {
 
     var bufferStream = new stream.PassThrough();
     bufferStream.end(content);
-    bufferStream.pipe(busboy)
+    bufferStream.pipe(busboy);
   } catch(err) {
     console.log("Ignoring error", err);
   }
@@ -38,7 +39,7 @@ function parseMultipart(content, contentType, callback) {
 function parseMessage(content, contentType, callback) {
   var mp = "multipart/form-data";
   if (contentType && contentType == "application/json") {
-    callback(null, { index: JSON.parse(msg.content.toString()), files: [] });
+    callback(null, { index: JSON.parse(content.toString()), files: [] });
   } else if (contentType && contentType.substr(0, mp.length) === mp) {
     parseMultipart(content, contentType, callback);
   } else {

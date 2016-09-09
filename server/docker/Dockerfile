@@ -25,7 +25,7 @@ ADD ssl ssl
 
 ARG sha=feature/amqp
 
-RUN curl -sL https://github.com/gertvv/patavi/archive/$sha.zip -o patavi.zip
+RUN curl -sL https://github.com/danielreid/patavi/archive/$sha.zip -o patavi.zip
 RUN unzip patavi.zip && mv patavi-*/server/* .
 
 RUN npm install --production
