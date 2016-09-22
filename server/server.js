@@ -76,11 +76,14 @@ var updatesWebSocket = function(app, ch, statusExchange) {
     });
   }
 
+  function wsSendErrorHandler(error) {
+    if (error) console.log("Error sending on WebSocket: ", error);
+  }
   return function(ws, req) {
     function receiveMessage(msg) {
       var str = msg.content.toString();
       var json = JSON.parse(str);
-      ws.send(str);
+      ws.send(str, wsSendErrorHandler);
       if (json.eventType === "done" || json.eventType === "failed") {
         ws.close();
       }
@@ -97,7 +100,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
           if (err) {
             ws.close();
           } else if (info.status == "failed" || info.status == "done") {
-            ws.send(JSON.stringify(util.resultMessage(taskId, info.status)));
+            ws.send(JSON.stringify(util.resultMessage(taskId, info.status)), wsSendErrorHandler);
             ws.close();
           }
         });
@@ -278,6 +281,28 @@ app.use(function(err, req, res, next) {
   res.status(401).sendFile('error401.html', { root: __dirname });
 });
 
+function sendNotificationEmail() {
+  if (!process.env.PATAVI_EMAIL_URI || !process.env.PATAVI_EMAIL_TO || !process.env.PATAVI_EMAIL_FROM) {
+    return;
+  }
+
+  var nodemailer = require('nodemailer');
+  var transport = nodemailer.createTransport(process.env.PATAVI_EMAIL_URI);
+  var mailOptions = {
+    to: process.env.PATAVI_EMAIL_TO,
+    from: process.env.PATAVI_EMAIL_FROM,
+    subject: '[patavi server] started on ' + pataviSelf + ' EOM'
+  };
+  transport.sendMail(mailOptions, function(error, info) {
+    if (error) {
+      return console.log(error);
+    }
+    console.log('Startup notification sent: ', info.response);
+  });
+}
+
 server.listen(process.env.PATAVI_PORT, function() {
   console.log("Listening on https:" + pataviSelf);
+
+  sendNotificationEmail();
 });

@@ -14,6 +14,7 @@ RUN apt-get install -y nodejs
 RUN apt-get install -y unzip git
 
 RUN npm install -g bower
+RUN npm install -g forever
 
 RUN useradd --create-home --home /var/lib/patavi patavi
 
@@ -31,4 +32,4 @@ RUN unzip patavi.zip && mv patavi-*/server/* .
 RUN npm install --production
 RUN cd public && bower install
 
-CMD node server
+CMD ["forever", "server.js"]
