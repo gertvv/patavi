@@ -8,7 +8,9 @@
             [cheshire.core :as json]
             [clojure.core.async :refer [thread >!! <!! close! chan]]
             [environ.core :refer [env]]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log])
+  (:import (org.apache.http.entity.mime MultipartEntityBuilder)
+           (org.apache.http.entity ContentType)))
 
 (defn amqp-options []
   {:host (or (env :patavi-broker-host) "localhost")
@@ -33,8 +35,20 @@
     (apply fn params)
     (catch Exception e
       (do (log/error e)
-          {:status failed
-           :cause (.getMessage e)}))))
+          {:index (json/generate-string {:status failed
+                   :cause (.getMessage e)})}))))
+
+(defn- multipart
+  [result]
+  (let [builder (MultipartEntityBuilder/create)
+        out (java.io.ByteArrayOutputStream.)]
+    (.addBinaryBody builder "index" (.getBytes (:index result)) ContentType/APPLICATION_JSON "index.json")
+    (doseq [file (:files result)]
+      (.addBinaryBody builder "file" (file "content") (ContentType/create (file "mime")) (file "name")))
+    (let [entity (.build builder)]
+     (.writeTo entity out)
+     { :bytes (.toByteArray out)
+     :content-type (.getValue (.getContentType entity)) })))
 
 (defn- handle-request
   [ch handler metadata msg]
@@ -44,14 +58,21 @@
           updater (partial send-update! ch task-id)]
       (thread (>!! work (wrap-exception handler msg updater)))
       (thread
-        (lb/publish ch "" reply-to (json/generate-string (<!! work)) { :content-type "application/json" :correlation-id task-id })
-        (lb/ack ch (:delivery-tag metadata))
-        (close! work))))
+        (let [result (<!! work)]
+          (if (empty? (:files result))
+            (lb/publish ch "" reply-to (:index result) { :content-type "application/json" :correlation-id task-id })
+            (let [mp (multipart result)]
+              (lb/publish ch "" reply-to (:bytes mp) { :content-type (:content-type mp) :correlation-id task-id }))
+)
+          (lb/ack ch (:delivery-tag metadata))
+          (close! work)))))
 
 (defn- handle-incoming
   [handler]
   (fn [ch metadata ^bytes payload]
-    (handle-request ch handler metadata (json/parse-string (String. payload)))))
+    (try
+     (handle-request ch handler metadata (json/parse-string (String. payload)))
+     (catch Exception e (do (log/error e) (throw (Exception. e)))))))
 
 (defn start
   [service handler]

@@ -54,8 +54,9 @@ The persistence module will consume results using fair dispatch, and acknowledge
 Since the application can no longer consume the result message, the persistence layer is responsible for sending a message to the `rpc_status` queue with topic `$task-id.end`.
 The application can wait for results by subscribing to the `$task-id.end` topic, or by polling the database.
 
-Our implementation currently assumes results are represented as JSON.
 The persistence module is embedded in the HTTP API server, but is only loosely coupled and could be made to run completely separately and replicated.
+
+Results can be returned either as JSON (`application/json`) or as a multi-part response (`multipart/form-data`). In the latter case, it is expected to contain an index JSON file in the `index` field. This index JSON should contain hyperlinks to any of the other files included in the multi-part response.
 
 ## HTTP API
 
@@ -87,8 +88,9 @@ The following routes are available:
    The link to results will only appear once results are actually available.
  - `GET /status?task=$taskId1&task=$taskId2` returns basic task information for multiple tasks as a JSON array.
  - `DELETE /task/$taskId` will remove a task and its results from the database.
- - `GET /task/$taskId/results` will return the results of task execution as is, if available.
+ - `GET /task/$taskId/results/` will return the results (index) of task execution as is, if available.
    If the results are not (yet) available a `404 Not Found` response will be given.
+ - `GET /task/$taskId/results/$fileName` will return a result file, if the results consist of multiple files. The index should contain links to all results files.
  - `WebSocket /task/$taskId/updates` will send messages of the form
    ```
    {
@@ -115,21 +117,6 @@ They are completely unaware of the persistence layer, and whether or not it is p
 
 The worker executes tasks by running an R script using an [RServe](https://rforge.net/Rserve/) instance and passing in the task JSON as parameters.
 It is implemented in Clojure.
-
-## Future extensions
-
-### Persistence / HTTP API: Transient tasks
-
-A method for handling transient tasks (tasks for which long-term persistence of results is not desired).
-For example, the HTTP API could accept an optional TTL parameter, in the ISO 8601 duration format.
-A postgres trigger could periodically remove all tasks that have expired.
-
-### Persistence / HTTP API: Multi-part responses
-
-For graphics and other binary files, it is desirable to not return them as part of the "main" JSON response.
-A possible solution is to allow `multipart/form-data` responses in addition to `application/json`.
-The response would be expected to contain a main JSON file, e.g. "index.json", with links to the other generated files.
-Additional files would be stored as blobs and keyed by name, which could be retrieved from `/task/$taskId/results/$file`.
 
 ## Licence
 

@@ -146,6 +146,19 @@
   [^RConnection R varname]
   (into-clj (.get R varname nil true)))
 
+(defn slurp-bytes
+  [x]
+  (with-open [out (java.io.ByteArrayOutputStream.)]
+    (clojure.java.io/copy (clojure.java.io/input-stream x) out)
+    (.toByteArray out)))
+
+(defn read-and-unlink-file!
+  [^RConnection R filename]
+  (let [content (with-open [file (.openFile R filename)]
+                 (slurp-bytes file))]
+    (.removeFile R filename)
+    content))
+
 (defn connect
   "Connect to an RServe instance. Each connection creates its own workspace
    and forks the existing R process, effectively sandboxing the R operations.

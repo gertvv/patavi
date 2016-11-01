@@ -241,6 +241,25 @@ app.get('/task/:taskId/results', function(req, res, next) {
   });
 });
 
+app.get('/task/:taskId/results/:file', function(req, res, next) {
+  var taskId = req.params.taskId;
+  var fileName = req.params.file;
+  if (!isValidTaskId(taskId)) {
+    return next(badRequestError());
+  }
+  if (req.headers["if-modified-since"] || req.headers["if-none-match"]) { // results never change
+    res.status(304);
+    res.end();
+    return;
+  }
+  pataviStore.getFile(taskId, fileName, function(err, file) {
+    if (err) return next(err);
+    res.header("Content-Type", file.content_type);
+    res.header("Cache-Control", "public, max-age=31557600"); // results never change
+    res.send(file.content);
+  });
+});
+
 app.delete('/task/:taskId', authRequired, function(req, res, next) {
   var taskId = req.params.taskId;
   if (!isValidTaskId(taskId)) {
