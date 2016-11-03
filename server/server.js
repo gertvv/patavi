@@ -5,7 +5,7 @@ var https = require('https');
 var bodyParser = require('body-parser');
 var amqp = require('amqplib/callback_api');
 var util = require('./util');
-var pataviStore = require('./pataviStore')
+var pataviStore = require('./pataviStore');
 var async = require('async');
 var persistenceService = require('./persistenceService');
 
@@ -14,9 +14,15 @@ var idGen = new FlakeId(); // FIXME: set unique generator ID
 
 var pataviSelf = util.pataviSelf;
 
-var isValidTaskId = function(id) { return /[0-9a-f]{16}/.test(id); };
+var isValidTaskId = function(id) {
+  return /[0-9a-f]{16}/.test(id);
+};
 
-var badRequestError = function() { var error = new Error('Bad request'); error.status = 400; return error; };
+var badRequestError = function() {
+  var error = new Error('Bad request');
+  error.status = 400;
+  return error;
+};
 
 // Serve over HTTPS, ask for client certificate
 var httpsOptions = {
@@ -25,7 +31,7 @@ var httpsOptions = {
   ca: fs.readFileSync('ssl/ca-crt.pem'),
   requestCert: true,
   rejectUnauthorized: false
-}
+};
 var app = express();
 var server = https.createServer(httpsOptions, app);
 
@@ -40,7 +46,7 @@ app.use(function(req, res, next) {
 
 // Client certificate authentication handling
 var clientCertificateAuth = require('client-certificate-auth');
-var authRequired = clientCertificateAuth(function(cert) {
+var authRequired = clientCertificateAuth(function() {
   return true; // we trust any cert signed by our own CA
 });
 
@@ -49,7 +55,7 @@ app.get('/', authRequired);
 app.get('/index.html', authRequired);
 app.use(express.static('public'));
 
-var ws = require('express-ws')(app, server);
+require('express-ws')(app, server);
 
 var taskDescription = function(taskId, service, status) {
   var description = {
@@ -57,15 +63,15 @@ var taskDescription = function(taskId, service, status) {
     'service': service,
     'status': status,
     '_links': {
-      self: { href: 'https:' + pataviSelf + '/task/' + taskId},
+      self: { href: 'https:' + pataviSelf + '/task/' + taskId },
       updates: { href: 'wss:' + pataviSelf + '/task/' + taskId + '/updates' }
     }
   };
-  if (status == 'failed' || status == 'done') {
+  if (status === 'failed' || status === 'done') {
     description._links.results = { href: 'https:' + pataviSelf + '/task/' + taskId + '/results' };
   }
   return description;
-}
+};
 
 var updatesWebSocket = function(app, ch, statusExchange) {
   function makeEventQueue(taskId, callback) {
@@ -78,7 +84,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
   }
 
   function wsSendErrorHandler(error) {
-    if (error) console.log('Error sending on WebSocket: ', error);
+    if (error) { console.log('Error sending on WebSocket: ', error); }
   }
   return function(ws, req) {
     function receiveMessage(msg) {
@@ -100,7 +106,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
         pataviStore.getInfo(taskId, function(err, info) {
           if (err) {
             ws.close();
-          } else if (info.status == 'failed' || info.status == 'done') {
+          } else if (info.status === 'failed' || info.status === 'done') {
             ws.send(JSON.stringify(util.resultMessage(taskId, info.status)), wsSendErrorHandler);
             ws.close();
           }
@@ -121,7 +127,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
       ch.consume(statusQ.queue, receiveMessage, { noAck: true }, consumerStarted(taskId));
     });
   };
-}
+};
 
 var postTask = function(app, ch, statusExchange, replyTo) {
   return function(req, res, next) {
@@ -138,13 +144,12 @@ var postTask = function(app, ch, statusExchange, replyTo) {
     }
 
     function assertServiceQueue(callback) {
-      ch.assertQueue(service, {exclusive: false, durable: true}, callback);
+      ch.assertQueue(service, { exclusive: false, durable: true }, callback);
     }
 
-    function queueTask(q, callback) {
+    function queueTask(q) {
       ch.sendToQueue(service,
-          new Buffer(JSON.stringify(req.body)),
-          { correlationId: taskId, replyTo: replyTo });
+        new Buffer(JSON.stringify(req.body)), { correlationId: taskId, replyTo: replyTo });
 
       res.status(201);
       res.location('https:' + pataviSelf + '/task/' + taskId);
@@ -159,8 +164,8 @@ var postTask = function(app, ch, statusExchange, replyTo) {
     ], function(err) {
       next(err);
     });
-  }
-}
+  };
+};
 
 
 // API routes that depend on AMQP connection
@@ -179,7 +184,7 @@ amqp.connect('amqp://' + process.env.PATAVI_BROKER_HOST, function(err, conn) {
     ch.assertExchange(statusExchange, 'topic', { durable: false });
 
     var replyTo = 'rpc_result';
-    ch.assertQueue(replyTo, {exclusive: false, durable: true}, function(err) {
+    ch.assertQueue(replyTo, { exclusive: false, durable: true }, function(err) {
       if (err) {
         console.log(err);
         process.exit(1);
@@ -202,7 +207,9 @@ app.get('/task/:taskId', function(req, res, next) {
     return next(badRequestError());
   }
   pataviStore.getInfo(taskId, function(err, info) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     if (info.status === 'done' || info.status === 'failed') {
       res.header('Cache-Control', 'public, max-age=31557600'); // completed tasks never change
     }
@@ -213,14 +220,18 @@ app.get('/task/:taskId', function(req, res, next) {
 app.get('/status', function(req, res, next) {
   var tasks = req.query.task;
   if (typeof tasks === 'string') {
-    tasks = [ tasks ];
+    tasks = [tasks];
   }
   if (!tasks.every(isValidTaskId)) {
     return next(badRequestError());
   }
   pataviStore.getMultiInfo(tasks, function(err, info) {
-    if (err) return next(err);
-    res.send(info.map(function(item) { return taskDescription(item.id, item.service, item.status); }));
+    if (err) {
+      return next(err);
+    }
+    res.send(info.map(function(item) {
+      return taskDescription(item.id, item.service, item.status);
+    }));
   });
 });
 
@@ -235,7 +246,9 @@ app.get('/task/:taskId/results', function(req, res, next) {
     return;
   }
   pataviStore.getResult(taskId, function(err, result) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     res.header('Content-Type', 'application/json');
     res.header('Cache-Control', 'public, max-age=31557600'); // results never change
     res.send(result);
@@ -254,7 +267,9 @@ app.get('/task/:taskId/results/:file', function(req, res, next) {
     return;
   }
   pataviStore.getFile(taskId, fileName, function(err, file) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     res.header('Content-Type', file.content_type);
     res.header('Cache-Control', 'public, max-age=31557600'); // results never change
     res.send(file.content);
@@ -267,7 +282,9 @@ app.delete('/task/:taskId', authRequired, function(req, res, next) {
     return next(badRequestError());
   }
   pataviStore.deleteTask(taskId, function(err) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     res.status(200);
     res.end();
   });
