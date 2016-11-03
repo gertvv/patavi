@@ -39,7 +39,7 @@ app.use(bodyParser.json());
 
 // Allow CORS (Cross Origin Resource Sharing) requests
 app.use(function(req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', req.header('Origin'));
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
 });
