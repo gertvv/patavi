@@ -15,7 +15,7 @@ var pataviSelf = util.pataviSelf;
 
 var isValidTaskId = function(id) { return /[0-9a-f]{16}/.test(id); };
 
-var badRequestError = function() { var error = new Error("Bad request"); error.status = 400; return error; };
+var badRequestError = function() { var error = new Error('Bad request'); error.status = 400; return error; };
 
 // Serve over HTTPS, ask for client certificate
 var httpsOptions = {
@@ -32,8 +32,8 @@ app.use(bodyParser.json());
 
 // Allow CORS (Cross Origin Resource Sharing) requests
 app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
 });
 
@@ -60,7 +60,7 @@ var taskDescription = function(taskId, service, status) {
       updates: { href: 'wss:' + pataviSelf + '/task/' + taskId + '/updates' }
     }
   };
-  if (status == "failed" || status == "done") {
+  if (status == 'failed' || status == 'done') {
     description._links.results = { href: 'https:' + pataviSelf + '/task/' + taskId + '/results' };
   }
   return description;
@@ -70,21 +70,21 @@ var updatesWebSocket = function(app, ch, statusExchange) {
   function makeEventQueue(taskId, callback) {
     ch.assertQueue('', { exclusive: true, autoDelete: true }, function(err, statusQ) {
       if (!err) {
-        ch.bindQueue(statusQ.queue, statusExchange, taskId + ".*");
+        ch.bindQueue(statusQ.queue, statusExchange, taskId + '.*');
       }
       callback(err, statusQ);
     });
   }
 
   function wsSendErrorHandler(error) {
-    if (error) console.log("Error sending on WebSocket: ", error);
+    if (error) console.log('Error sending on WebSocket: ', error);
   }
   return function(ws, req) {
     function receiveMessage(msg) {
       var str = msg.content.toString();
       var json = JSON.parse(str);
       ws.send(str, wsSendErrorHandler);
-      if (json.eventType === "done" || json.eventType === "failed") {
+      if (json.eventType === 'done' || json.eventType === 'failed') {
         ws.close();
       }
     }
@@ -99,7 +99,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
         pataviStore.getInfo(taskId, function(err, info) {
           if (err) {
             ws.close();
-          } else if (info.status == "failed" || info.status == "done") {
+          } else if (info.status == 'failed' || info.status == 'done') {
             ws.send(JSON.stringify(util.resultMessage(taskId, info.status)), wsSendErrorHandler);
             ws.close();
           }
@@ -113,7 +113,7 @@ var updatesWebSocket = function(app, ch, statusExchange) {
     }
     makeEventQueue(taskId, function(err, statusQ) {
       if (err) {
-        console.log("Error creating websocket", err);
+        console.log('Error creating websocket', err);
         return ws.close();
       }
 
@@ -147,7 +147,7 @@ var postTask = function(app, ch, statusExchange, replyTo) {
 
       res.status(201);
       res.location('https:' + pataviSelf + '/task/' + taskId);
-      var s = q.consumerCount === 0 ? "no-workers" : "unknown";
+      var s = q.consumerCount === 0 ? 'no-workers' : 'unknown';
       res.send(taskDescription(taskId, service, s));
     }
 
@@ -202,8 +202,8 @@ app.get('/task/:taskId', function(req, res, next) {
   }
   pataviStore.getInfo(taskId, function(err, info) {
     if (err) return next(err);
-    if (info.status === "done" || info.status === "failed") {
-      res.header("Cache-Control", "public, max-age=31557600"); // completed tasks never change
+    if (info.status === 'done' || info.status === 'failed') {
+      res.header('Cache-Control', 'public, max-age=31557600'); // completed tasks never change
     }
     res.send(taskDescription(taskId, info.service, info.status));
   });
@@ -228,15 +228,15 @@ app.get('/task/:taskId/results', function(req, res, next) {
   if (!isValidTaskId(taskId)) {
     return next(badRequestError());
   }
-  if (req.headers["if-modified-since"] || req.headers["if-none-match"]) { // results never change
+  if (req.headers['if-modified-since'] || req.headers['if-none-match']) { // results never change
     res.status(304);
     res.end();
     return;
   }
   pataviStore.getResult(taskId, function(err, result) {
     if (err) return next(err);
-    res.header("Content-Type", "application/json");
-    res.header("Cache-Control", "public, max-age=31557600"); // results never change
+    res.header('Content-Type', 'application/json');
+    res.header('Cache-Control', 'public, max-age=31557600'); // results never change
     res.send(result);
   });
 });
@@ -247,15 +247,15 @@ app.get('/task/:taskId/results/:file', function(req, res, next) {
   if (!isValidTaskId(taskId)) {
     return next(badRequestError());
   }
-  if (req.headers["if-modified-since"] || req.headers["if-none-match"]) { // results never change
+  if (req.headers['if-modified-since'] || req.headers['if-none-match']) { // results never change
     res.status(304);
     res.end();
     return;
   }
   pataviStore.getFile(taskId, fileName, function(err, file) {
     if (err) return next(err);
-    res.header("Content-Type", file.content_type);
-    res.header("Cache-Control", "public, max-age=31557600"); // results never change
+    res.header('Content-Type', file.content_type);
+    res.header('Cache-Control', 'public, max-age=31557600'); // results never change
     res.send(file.content);
   });
 });
@@ -302,7 +302,7 @@ function sendNotificationEmail() {
 }
 
 server.listen(process.env.PATAVI_PORT, function() {
-  console.log("Listening on https:" + pataviSelf);
+  console.log('Listening on https:' + pataviSelf);
 
   sendNotificationEmail();
 });
