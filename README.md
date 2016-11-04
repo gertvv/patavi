@@ -1,5 +1,3 @@
-***Niet duidelijk waar de readme's van de benodigdheden staan***
-
 # Patavi
 
 <img src="server/public/img/patavi_small.png" alt="logo" align="right" width="250" />
@@ -31,6 +29,8 @@ Clients can queue jobs at the server if they present an SSL client certificate t
 The following will start a RabbitMQ instance with default (guest/guest) credentials:
 
 ```docker run -d --hostname my-rabbit --name my-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management```
+
+How to install and start the rest of the prerequisites can be found in their respective readme's.
 
 ## Messaging architecture
 
