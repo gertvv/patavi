@@ -1,9 +1,11 @@
+
+
 Patavi server dockerfile
 ========================
 
 Prerequisites:
 
- - An `ssl` directory, containing:
+ - Create an `ssl` directory, containing:
 
    - `ssl/server-crt.pem` and `ssl/server-key.pem`, the public/private certificate/key pair for the server
    - `ssl/ca-crt.pem`, the CA certificate for the server to trust client connections with
