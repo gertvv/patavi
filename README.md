@@ -1,3 +1,5 @@
+***Niet duidelijk waar de readme's van de benodigdheden staan***
+
 # Patavi
 
 <img src="server/public/img/patavi_small.png" alt="logo" align="right" width="250" />
