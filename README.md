@@ -30,6 +30,14 @@ The following will start a RabbitMQ instance with default (guest/guest) credenti
 
 ```docker run -d --hostname my-rabbit --name my-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management```
 
+## ID generation strategy
+
+Patavi generates generates [flake IDs](https://github.com/boundary/flake) using [flake-idgen](https://github.com/T-PWK/flake-idgen) for NodeJS. In theory, this allows safe ID generation with replicated instances of the server. Flake IDs are 64-bit integers that are represented in hexadecimal in the HTTP API and JSON messages.
+
+In the database the IDs are represented as integers, which makes querying in PostgreSQL a bit tricky. The following query illustrates how to convert both ways:
+
+```SELECT to_hex(id), created_at FROM patavi_task WHERE id=('x'||'561a243066800000')::bit(64)::bigint;```
+
 ## Messaging architecture
 
 ![Messaging architecture overview](doc/arch_messaging.png)
